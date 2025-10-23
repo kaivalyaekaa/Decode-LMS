@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin - Ekaa Registration Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo img {
+            height: 165px;
+            width: auto;
+        }
+
+        header h1 {
+            color: #800080;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            padding: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+
+        h1.form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 2rem;
+        }
+
+        h1.form-title span {
+            color: #800080;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f9fafb;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #800080;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        .refresh-btn {
+            background-color: #800080;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .refresh-btn:hover {
+            background-color: #6a0dad;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <img src="https://placehold.co/165x165/800080/FFFFFF?text=Ekaa+Logo" alt="Ekaa Logo">
+        <h1>Registration Portal - Admin</h1>
+    </div>
+</header>
+
+<div class="card">
+    <h1 class="form-title"><span>Admin Panel</span></h1>
+    <a th:href="@{/admin/registrations}" class="refresh-btn">Refresh Data</a>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Connected With</th>
+            <th>Selected Trainings</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="reg : ${registrations}">
+            <td th:text="${reg.name}"></td>
+            <td th:text="${reg.email}"></td>
+            <td th:text="${reg.phone}"></td>
+            <td th:text="${reg.connectedWith}"></td>
+            <td th:text="${reg.selectedTrainings}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<footer>
+    &copy; 2025 Ekaa in Decode. All rights reserved.
+</footer>
+
+</body>
+</html>
