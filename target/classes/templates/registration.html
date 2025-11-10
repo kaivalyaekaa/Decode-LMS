@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- JQUERY LIBRARY FOR AJAX SUBMISSION -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
         /* Reset some default styling */
@@ -331,7 +330,7 @@
 
 <div class="card">
     <!-- FIX: Corrected broken h1 tag -->
-    <h1 class="form-title"> <span>SPOT REGISTRATION</span></h1>
+    <h1 class="form-title"> <span>GENRIC REGISTRATION</span></h1>
 
 
     <div th:if="${successMessage}" class="text-green-600 p-3 bg-green-50 rounded-lg" th:text="${successMessage}"></div>
@@ -354,7 +353,7 @@
         </div>
 
         <div class="form-group">
-            <label for="connectedWith">Whom did you Connected With on HHME 2025 event </label>
+            <label for="connectedWith">Whom did you Connected in team EKAA to learn about this program </label>
             <input type="text" id="connectedWith" th:field="*{connectedWith}">
         </div>
 
@@ -369,43 +368,40 @@
             <tbody>
             <!-- Program: Awaken the Limitless Human -->
             <tr>
-                <td class="program-name">Awaken the Limitless Human</td>
+                <td class="program-name">Integrated Clinical Hynotherapy</td>
                 <td class="levels">
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 1" id="awaken-1">
-                        <label for="awaken-1">Level 1</label>
+                        <label for="awaken-1">Basic Cource</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 2" id="awaken-2">
-                        <label for="awaken-2">Level 2</label>
+                        <label for="awaken-2">Behavioural Resolution</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 3" id="awaken-3">
-                        <label for="awaken-3">Level 3</label>
+                        <label for="awaken-3">Health Resolution</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 4" id="awaken-4">
-                        <label for="awaken-4">Level 4</label>
+                        <label for="awaken-4">Spiritual Hypnosis</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 5" id="awaken-5">
-                        <label for="awaken-5">Level 5</label>
+                        <label for="awaken-5">Integrated Clinical Hypnotherapy</label>
                     </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 6" id="awaken-6">
-                        <label for="awaken-6">Level 6</label>
-                    </div>
+
                 </td>
             </tr>
             <!-- Program: Tasso Hypnotherapy - Modules 1 through 6 -->
             <tr>
-                <td class="program-name">Tasso</td>
+                <td class="program-name">Transpersonal Regressions Therapy</td>
                 <td class="levels">
                     <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 1" id="tasso-1">
-                        <label for="tasso-1">Module 1</label>
+                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy" id="tasso-1">
+                        <label for="tasso-1">Transpersonal Regressions Therapy</label>
                     </div>
-                    <div class="level-checkbox">
+                    <!--<div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 2" id="tasso-2">
                         <label for="tasso-2">Module 2</label>
                     </div>
@@ -424,7 +420,7 @@
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 6" id="tasso-6">
                         <label for="tasso-6">Module 6</label>
-                    </div>
+                    </div>-->
                 </td>
             </tr>
             <!-- Program: Decode -->
@@ -433,19 +429,19 @@
                 <td class="levels">
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Decode - Level 1" id="decode-1">
-                        <label for="decode-1">Level 1</label>
+                        <label for="decode-1">DECODE Your Mind</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Decode - Level 2" id="decode-2">
-                        <label for="decode-2">Level 2</label>
+                        <label for="decode-2">DECODE Your Behaviour</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Decode - Level 3" id="decode-3">
-                        <label for="decode-3">Level 3</label>
+                        <label for="decode-3">DECODE Your Relationships</label>
                     </div>
                     <div class="level-checkbox">
                         <input type="checkbox" name="selectedTrainings" value="Decode - Level 4" id="decode-4">
-                        <label for="decode-4">Level 4</label>
+                        <label for="decode-4">DECODE Your Blue Print</label>
                     </div>
                 </td>
             </tr>
@@ -519,7 +515,7 @@
 </div>
 
 <footer>
-    &copy; 2025 Ekaa in Decode. All rights reserved.
+    &copy; 2025 EKAA. All rights reserved.
 </footer>
 
 <script>
@@ -555,7 +551,7 @@
             // NOTE: Using localhost:8080 URL for the backend API call.
             $.ajax({
                 type: 'POST',
-                url: 'http://localhost:8080/registration',
+                url: 'http://localhost:8082/registration',
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function (response) {
