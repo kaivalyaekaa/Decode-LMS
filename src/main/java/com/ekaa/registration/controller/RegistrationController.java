@@ -92,7 +92,8 @@ public class RegistrationController {
         registrationRepository.save(registration);
 
         // 5. Return success response
-        response.put("message", "Registration successful!");
+        response.put("message", "Registration successful! One of our team from EKAA will contact you within 48 hours.");
         return ResponseEntity.ok(response);
+
     }
 }

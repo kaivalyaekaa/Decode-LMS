@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -12,60 +13,57 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-        }
-
-        header {
-            background-color: #fff;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo img {
-            height: 165px;
-            width: auto;
-        }
-
-        header h1 {
-            color: #800080;
-            font-size: 1.8rem;
-            font-weight: 700;
+            margin: 0;
         }
 
         .card {
             background-color: #fff;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1),
+            0 4px 6px -2px rgba(0,0,0,0.05);
             padding: 2rem;
             width: 100%;
             max-width: 1200px;
             margin: 2rem auto;
         }
 
-        h1.form-title {
-            font-size: 2rem;
-            font-weight: 700;
-            text-align: center;
-            color: #1f2937;
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
             margin-bottom: 2rem;
         }
 
-        h1.form-title span {
+        .header-row img {
+            position: absolute;
+            left: 0;
+            height: 90px;
+            width: auto;
+            margin-left: 1rem;
+        }
+
+        .header-row h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
             color: #800080;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        h2.section-title {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #4b0082;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
 
         th, td {
@@ -80,13 +78,9 @@
             color: #374151;
         }
 
-        footer {
-            text-align: center;
-            padding: 1.5rem;
-            background-color: #800080;
-            color: #fff;
-            font-size: 0.9rem;
-            margin-top: auto;
+        td {
+            color: #1f2937;
+            font-size: 0.95rem;
         }
 
         .refresh-btn {
@@ -98,7 +92,7 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             transition: background-color 0.3s;
             text-decoration: none;
             display: inline-block;
@@ -107,20 +101,47 @@
         .refresh-btn:hover {
             background-color: #6a0dad;
         }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: #800080;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header-row img {
+                position: static;
+                display: block;
+                margin: 0 auto 1rem;
+            }
+
+            .header-row {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">
-        <img src="https://placehold.co/165x165/800080/FFFFFF?text=Ekaa+Logo" alt="Ekaa Logo">
-        <h1>Registration Portal - Admin</h1>
-    </div>
-</header>
-
+<!-- Admin Panel Card -->
 <div class="card">
-    <h1 class="form-title"><span>Admin Panel</span></h1>
-    <a th:href="@{/admin/registrations}" class="refresh-btn">Refresh Data</a>
+    <div class="header-row">
+        <img th:src="@{/images/R.png}" src="images/R.png" alt="Ekaa Logo">
+        <h1>Admin Panel</h1>
+    </div>
+
+
+    <!-- Buttons for Refresh & Download -->
+    <div class="button-group">
+        <a th:href="@{/admin/registrations}" class="refresh-btn"> Refresh Data</a>
+        <a th:href="@{/admin/export-excel}" class="refresh-btn"> Download Excel</a>
+    </div>
+
     <table>
         <thead>
         <tr>

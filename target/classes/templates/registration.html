@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title> Registration </title>
+    <title>Registration</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- JQUERY LIBRARY FOR AJAX SUBMISSION -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
     <style>
-        /* Reset some default styling */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        /* Reset */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -31,30 +28,15 @@
             justify-content: center;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo img {
-            height: 60px; /* adjusted logo size */
-            width: auto;
-        }
-
-        .logo h1 {
-            font-size: 1.8rem;
-            color: #800080;
-            font-weight: 700;
-        }
+        .logo img {height: 92px; width: auto; }
 
         .card {
             background-color: #fff;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
             padding: 2rem;
             width: 100%;
-            max-width: 900px;
+            max-width: 1033px;
             margin: 2rem auto;
         }
 
@@ -65,37 +47,9 @@
             color: #1f2937;
             margin-bottom: 1rem;
         }
+        h1.form-title span { color: #800080; }
 
-        h1.form-title span {
-            color: #800080;
-        }
-
-        /* Simplified Offer Banner Styling */
-        .offer-banner {
-            padding: 0.5rem 0;
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .offer-banner h2 {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: #800080;
-            margin-bottom: 0.5rem;
-        }
-
-        .offer-banner p {
-            font-size: 1rem;
-            color: #4b5563;
-            font-weight: 400;
-            line-height: 1.5;
-        }
-
-        /* Form fields styling */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
+        .form-group { margin-bottom: 1.5rem; }
         label {
             display: block;
             font-weight: 600;
@@ -103,9 +57,7 @@
             color: #374151;
         }
 
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"] {
+        input[type="text"], input[type="email"], input[type="tel"] {
             width: 100%;
             padding: 0.85rem;
             border: 2px solid #e5e7eb;
@@ -119,8 +71,6 @@
             box-shadow: 0 0 0 4px rgba(128,0,128,0.25);
         }
 
-        /* Table UI - Desktop Styles (Default) */
-        /* Removed .table-responsive and min-width to allow full mobile transformation */
         table {
             width: 100%;
             border-collapse: separate;
@@ -145,34 +95,33 @@
             font-weight: 600;
         }
 
-        /* Apply rounded corners to header */
         thead tr:first-child th:first-child { border-top-left-radius: 0.75rem; }
         thead tr:first-child th:last-child { border-top-right-radius: 0.75rem; }
 
-        /* Table Row Styling */
-        tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
-        tbody tr:last-child {
-            border-bottom: none;
-        }
+        tbody tr { border-bottom: 1px solid #e5e7eb; }
+        tbody tr:last-child { border-bottom: none; }
 
-        /* Styling the program name cell ONLY */
         td.program-name {
-            background-color: #f3e8ff; /* Light lavender color for program name column */
+            background-color: #f3e8ff;
             font-weight: 700;
             color: #6a1b9a;
             vertical-align: top;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb; /* thinner divider */
+            width: 35%;
+        }
+
+
+        /* Visible dividers between programs */
+        tr.program-divider {
+            border-top: 3px solid #800080;
         }
 
         .levels {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Adjusted min-width slightly */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 0.75rem;
         }
 
-        /* Level checkbox button styles */
         .level-checkbox {
             display: flex;
             align-items: center;
@@ -185,17 +134,12 @@
             transition: all 0.2s ease;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             user-select: none;
-            min-width: fit-content;
         }
 
         .level-checkbox input[type="checkbox"] {
             position: absolute;
             opacity: 0;
             pointer-events: none;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            margin: -1px;
         }
 
         .level-checkbox label {
@@ -223,7 +167,6 @@
             font-weight: 600;
         }
 
-        /* Global submit button styling */
         button[type="submit"] {
             width: 100%;
             background-color: #800080;
@@ -239,14 +182,8 @@
             box-shadow: 0 4px 6px rgba(128,0,128,0.3);
         }
 
-        button[type="submit"]:hover {
-            background-color: #6a0dad;
-            transform: translateY(-1px);
-        }
-
-        button[type="submit"]:active {
-            transform: translateY(1px);
-        }
+        button[type="submit"]:hover { background-color: #6a0dad; transform: translateY(-1px); }
+        button[type="submit"]:active { transform: translateY(1px); }
 
         footer {
             text-align: center;
@@ -257,43 +194,16 @@
             margin-top: auto;
         }
 
-        /* --- MOBILE RESPONSIVENESS (STACKED TABLE) --- */
         @media (max-width: 768px) {
-            .card {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
+            table, thead, tbody, th, td, tr { display: block; width: 100%; border: none; }
+            thead { display: none; }
 
-            /* Stack all table elements */
-            table, thead, tbody, th, td, tr {
-                display: block;
-                width: 100%;
-                padding: 0; /* Reset padding for stacking */
-                border: none;
-            }
-
-            /* Hide the main desktop table header */
-            thead {
-                display: none;
-            }
-
-            /* Style rows as individual cards */
             tbody tr {
                 border: 1px solid #e5e7eb;
                 margin-bottom: 1.5rem;
                 border-radius: 0.5rem;
-                overflow: hidden;
             }
 
-            /* Reset padding on td since they now contain their own content block */
-            td {
-                padding: 0;
-                border-bottom: none;
-                background-color: transparent;
-                text-align: left;
-            }
-
-            /* Program Name (Header of the mobile card) */
             td.program-name {
                 background-color: #f3e8ff;
                 border-right: none;
@@ -302,39 +212,22 @@
                 border-bottom: 1px solid #e5e7eb;
             }
 
-            /* Levels/Modules content container */
-            td:not(.program-name) {
-                padding: 1.5rem;
-            }
+            td:not(.program-name) { padding: 1.5rem; }
 
-            /* Levels grid adapts to 2 columns */
-            .levels {
-                grid-template-columns: 1fr 1fr;
-                gap: 0.75rem;
-            }
-
-            .level-checkbox {
-                padding: 0.6rem 0.5rem;
-            }
+            .levels { grid-template-columns: 1fr 1fr; }
+            .level-checkbox { padding: 0.6rem 0.5rem; }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">
-        <!-- Logo source updated for context -->
-        <img th:src="@{/images/R.png}" src="images/R.png" alt="Ekaa Logo">
-    </div>
-</header>
+
 
 <div class="card">
-    <!-- FIX: Corrected broken h1 tag -->
-    <h1 class="form-title"> <span>GENRIC REGISTRATION</span></h1>
-
-
-    <div th:if="${successMessage}" class="text-green-600 p-3 bg-green-50 rounded-lg" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage}" class="text-red-600 p-3 bg-red-50 rounded-lg" th:text="${errorMessage}"></div>
+    <div class="logo">
+        <img th:src="@{/images/R.png}" src="images/R.png" alt="Ekaa Logo">
+    </div>
+    <h1 class="form-title"><span>REGISTRATION</span></h1>
 
     <form id="registrationForm" th:action="@{/registration}" th:object="${registration}" method="post">
         <div class="form-group">
@@ -353,158 +246,85 @@
         </div>
 
         <div class="form-group">
-            <label for="connectedWith">Whom did you Connected in team EKAA to learn about this program </label>
+            <label for="connectedWith">Who from Team EKAA told you about this program?</label>
             <input type="text" id="connectedWith" th:field="*{connectedWith}">
         </div>
 
-        <!-- REMOVED: table-responsive container which forced horizontal scrolling -->
+        <!-- REORDERED PROGRAMS -->
         <table>
             <thead>
             <tr>
-                <th>Program</th>
-                <th>Available Levels / Modules</th>
+                <th>PROGRAM</th>
+                <th> LEVELS & MODULES </th>
             </tr>
             </thead>
             <tbody>
-            <!-- Program: Awaken the Limitless Human -->
-            <tr>
-                <td class="program-name">Integrated Clinical Hynotherapy</td>
-                <td class="levels">
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 1" id="awaken-1">
-                        <label for="awaken-1">Basic Cource</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 2" id="awaken-2">
-                        <label for="awaken-2">Behavioural Resolution</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 3" id="awaken-3">
-                        <label for="awaken-3">Health Resolution</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 4" id="awaken-4">
-                        <label for="awaken-4">Spiritual Hypnosis</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Awaken the Limitless Human - Level 5" id="awaken-5">
-                        <label for="awaken-5">Integrated Clinical Hypnotherapy</label>
-                    </div>
 
-                </td>
-            </tr>
-            <!-- Program: Tasso Hypnotherapy - Modules 1 through 6 -->
-            <tr>
-                <td class="program-name">Transpersonal Regressions Therapy</td>
+            <!-- 1️⃣ Decode Masterclasses -->
+            <tr class="program-divider">
+                <td class="program-name">DECODE Masterclasses</td>
                 <td class="levels">
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy" id="tasso-1">
-                        <label for="tasso-1">Transpersonal Regressions Therapy</label>
-                    </div>
-                    <!--<div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 2" id="tasso-2">
-                        <label for="tasso-2">Module 2</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 3" id="tasso-3">
-                        <label for="tasso-3">Module 3</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 4" id="tasso-4">
-                        <label for="tasso-4">Module 4</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 5" id="tasso-5">
-                        <label for="tasso-5">Module 5</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Tasso Hypnotherapy - Module 6" id="tasso-6">
-                        <label for="tasso-6">Module 6</label>
-                    </div>-->
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for leaders" id="masterclass-1"><label for="masterclass-1">For Leaders</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for health practitioners" id="masterclass-2"><label for="masterclass-2">For Health Practitioners</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for teachers and parents" id="masterclass-3"><label for="masterclass-3">For Teachers and Parents</label></div>
                 </td>
             </tr>
-            <!-- Program: Decode -->
-            <tr>
-                <td class="program-name">Decode</td>
+
+            <!-- 2️⃣ Decode -->
+            <tr class="program-divider">
+                <td class="program-name">DECODE</td>
                 <td class="levels">
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode - Level 1" id="decode-1">
-                        <label for="decode-1">DECODE Your Mind</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode - Level 2" id="decode-2">
-                        <label for="decode-2">DECODE Your Behaviour</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode - Level 3" id="decode-3">
-                        <label for="decode-3">DECODE Your Relationships</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode - Level 4" id="decode-4">
-                        <label for="decode-4">DECODE Your Blue Print</label>
-                    </div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode - Level 1" id="decode-1"><label for="decode-1">Level 1 – DECODE Your Mind</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode - Level 2" id="decode-2"><label for="decode-2">Level 2 – DECODE Your Behaviour</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode - Level 3" id="decode-3"><label for="decode-3">Level 3 – DECODE Your Relationships</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Decode - Level 4" id="decode-4"><label for="decode-4">Level 4 – DECODE Your Blueprint</label></div>
                 </td>
             </tr>
-            <!-- Program: Decode Masterclasses -->
-            <tr>
-                <td class="program-name">Decode Masterclasses</td>
+
+            <!-- 3️⃣ Integrated Clinical Hypnotherapy -->
+            <tr class="program-divider">
+                <td class="program-name">Integrated Clinical Hypnotherapy</td>
                 <td class="levels">
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for leaders" id="masterclass-1">
-                        <label for="masterclass-1">For Leaders</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for health practitioners" id="masterclass-2">
-                        <label for="masterclass-2">For Health Practitioners</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Decode Masterclasses - for teachers and parents" id="masterclass-3">
-                        <label for="masterclass-3">For Teachers and Parents</label>
-                    </div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Integrated Clinical Hypnotherapy - Level 1" id="ich-1"><label for="ich-1">Level 1 – Basic Course</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Integrated Clinical Hypnotherapy - Level 2" id="ich-2"><label for="ich-2">Level 2 – Behavioural Resolution</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Integrated Clinical Hypnotherapy - Level 3" id="ich-3"><label for="ich-3">Level 3 – Health Resolution</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Integrated Clinical Hypnotherapy - Level 4" id="ich-4"><label for="ich-4">Level 4 – Spiritual Hypnosis</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Integrated Clinical Hypnotherapy - Level 5" id="ich-5"><label for="ich-5">Level 5 – Advanced Integration</label></div>
                 </td>
             </tr>
-            <!-- Program: Workshops -->
-            <tr>
+
+            <!-- 4️⃣ Workshops -->
+            <tr class="program-divider">
                 <td class="program-name">Workshops</td>
                 <td class="levels">
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Hidden Colours" id="workshop-1">
-                        <label for="workshop-1">Hidden Colours</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - The Quest" id="workshop-2">
-                        <label for="workshop-2">The Quest</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Circle of Life" id="workshop-3">
-                        <label for="workshop-3"> Circle of Life</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Insomnia" id="workshop-4">
-                        <label for="workshop-4">Insomnia</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Fractals" id="workshop-5">
-                        <label for="workshop-5">Fractals</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Koshas" id="workshop-6">
-                        <label for="workshop-6">Koshas</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Elemental Currents" id="workshop-7">
-                        <label for="workshop-7">Elemental Currents</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - The Labyrinth" id="workshop-8">
-                        <label for="workshop-8">The Labyrinth</label>
-                    </div>
-                    <div class="level-checkbox">
-                        <input type="checkbox" name="selectedTrainings" value="Workshops - Tamas - understanding laws of karma" id="workshop-9">
-                        <label for="workshop-9"> Tamas - understanding laws of karma</label>
-                    </div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Hidden Colours" id="workshop-1"><label for="workshop-1">Hidden Colours</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - The Quest" id="workshop-2"><label for="workshop-2">The Quest</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Circle of Life" id="workshop-3"><label for="workshop-3">Circle of Life</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Insomnia" id="workshop-4"><label for="workshop-4">Insomnia</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Fractals" id="workshop-5"><label for="workshop-5">Fractals</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Koshas" id="workshop-6"><label for="workshop-6">Koshas</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Elemental Currents" id="workshop-7"><label for="workshop-7">Elemental Currents</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - The Labyrinth" id="workshop-8"><label for="workshop-8">The Labyrinth</label></div>
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Workshops - Tamas" id="workshop-9"><label for="workshop-9">Tamas – Understanding Laws of Karma</label></div>
                 </td>
             </tr>
+
+            <!-- 5️⃣ Family Constellation -->
+            <tr class="program-divider">
+                <td class="program-name">Family Constellation</td>
+                <td class="levels">
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Family Constellation" id="family-1"><label for="family-1">Family Constellation</label></div>
+                </td>
+            </tr>
+
+            <!-- 6️⃣ Transpersonal Regression Therapy -->
+            <tr class="program-divider">
+                <td class="program-name">TASSO</td>
+                <td class="levels">
+                    <div class="level-checkbox"><input type="checkbox" name="selectedTrainings" value="Transpersonal Regression Therapy" id="tasso-1"><label for="tasso-1">Transpersonal Regression Therapy</label></div>
+                </td>
+            </tr>
+
             </tbody>
         </table>
 
@@ -514,31 +334,18 @@
     <div id="message" class="mt-4 text-center font-semibold"></div>
 </div>
 
-<footer>
-    &copy; 2025 EKAA. All rights reserved.
-</footer>
+<footer>&copy; 2025 EKAA. All rights reserved.</footer>
 
 <script>
     $(document).ready(function () {
-
-        // This function handles the visual change of the button when the checkbox state changes
         $('.level-checkbox input[type="checkbox"]').on('change', function() {
-            // Toggle the 'is-checked' class on the parent div
-            if ($(this).is(':checked')) {
-                $(this).parent('.level-checkbox').addClass('is-checked');
-            } else {
-                $(this).parent('.level-checkbox').removeClass('is-checked');
-            }
-        }).trigger('change'); // Trigger on load to initialize button style based on pre-selected values (if any)
+            $(this).parent('.level-checkbox').toggleClass('is-checked', $(this).is(':checked'));
+        }).trigger('change');
 
-        // Standard form submission logic (kept for completeness)
         $('#registrationForm').on('submit', function (e) {
             e.preventDefault();
-
             var selectedTrainings = [];
-            $('input[name="selectedTrainings"]:checked').each(function () {
-                selectedTrainings.push($(this).val());
-            });
+            $('input[name="selectedTrainings"]:checked').each(function () { selectedTrainings.push($(this).val()); });
 
             var formData = {
                 name: $('#name').val(),
@@ -548,7 +355,6 @@
                 selectedTrainings: selectedTrainings
             };
 
-            // NOTE: Using localhost:8080 URL for the backend API call.
             $.ajax({
                 type: 'POST',
                 url: 'http://localhost:8082/registration',
@@ -557,19 +363,16 @@
                 success: function (response) {
                     $('#message').html('<div style="color: green;">✅ ' + response.message + '</div>');
                     $('#registrationForm')[0].reset();
-
-                    // Reset button styles after successful submission
                     $('.level-checkbox').removeClass('is-checked');
                 },
                 error: function (xhr) {
-                    var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : "An unknown error occurred during registration.";
+                    var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : "An unknown error occurred.";
                     $('#message').html('<div style="color: red;">❌ ' + errorMessage + '</div>');
                 }
             });
         });
     });
 </script>
-
 
 </body>
 </html>
