@@ -142,26 +142,72 @@
         <a th:href="@{/admin/export-excel}" class="refresh-btn"> Download Excel</a>
     </div>
 
+    <div class="flex flex-wrap gap-4 mb-4">
+
+        <!-- Search -->
+        <input type="text" id="searchInput" placeholder="Search anything..."
+               class="border p-2 rounded w-60">
+
+        <!-- Filter Program -->
+        <select id="programFilter" class="border p-2 rounded w-60">
+            <option value="">Filter by Program</option>
+            <option th:each="reg : ${registrations}"
+                    th:value="${reg.selectedTrainings}"
+                    th:text="${reg.selectedTrainings}">
+            </option>
+        </select>
+
+        <!-- Filter Date -->
+        <input type="date" id="dateFilter" class="border p-2 rounded">
+
+        <!-- Rows per page -->
+        <select id="rowsPerPage" class="border p-2 rounded">
+            <option value="10">10 rows</option>
+            <option value="20">20 rows</option>
+            <option value="50">50 rows</option>
+        </select>
+
+    </div>
+
+
     <table>
         <thead>
         <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
+            <th>Sl No</th>
+            <th>Submitted On</th>
+            <th>Program</th>
+            <th>Country / City</th>
             <th>Connected With</th>
-            <th>Selected Trainings</th>
+            <th>Name</th>
+            <th>Phone No</th>
+            <th>Email</th>
         </tr>
         </thead>
+
         <tbody>
-        <tr th:each="reg : ${registrations}">
-            <td th:text="${reg.name}"></td>
-            <td th:text="${reg.email}"></td>
-            <td th:text="${reg.phone}"></td>
-            <td th:text="${reg.connectedWith}"></td>
+        <tr th:each="reg, stat : ${registrations}">
+            <td th:text="${stat.index + 1}"></td> <!-- Serial Number -->
+            <td th:text="${reg.createdAt}"></td>
             <td th:text="${reg.selectedTrainings}"></td>
+            <td th:text="${reg.countryCity}"></td>
+            <td th:text="${reg.connectedWith}"></td>
+            <td th:text="${reg.name}"></td>
+            <td th:text="${reg.phone}"></td>
+            <td th:text="${reg.email}"></td>
         </tr>
         </tbody>
     </table>
+
+    <div class="flex justify-between items-center mt-4">
+
+        <button id="prevBtn" class="refresh-btn">Prev</button>
+
+        <span id="pageInfo" class="font-semibold"></span>
+
+        <button id="nextBtn" class="refresh-btn">Next</button>
+
+    </div>
+
 </div>
 
 <footer>
@@ -169,4 +215,79 @@
 </footer>
 
 </body>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const rows = Array.from(document.querySelectorAll("tbody tr"));
+        let filteredRows = rows;
+        let currentPage = 1;
+        let rowsPerPage = 10;
+
+        function applyFilters() {
+
+            const searchText = document.getElementById("searchInput").value.toLowerCase();
+            const programText = document.getElementById("programFilter").value;
+            const dateText = document.getElementById("dateFilter").value;
+
+            filteredRows = rows.filter(row => {
+
+                const rowText = row.innerText.toLowerCase();
+                const program = row.children[2].innerText; // Program column
+                const submittedOn = row.children[1].innerText; // Date column
+
+                let matchesSearch = rowText.includes(searchText);
+                let matchesProgram = !programText || program.includes(programText);
+                let matchesDate = !dateText || submittedOn.includes(dateText);
+
+                return matchesSearch && matchesProgram && matchesDate;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        function renderTable() {
+            rows.forEach(row => row.style.display = "none");
+
+            let start = (currentPage - 1) * rowsPerPage;
+            let end = start + rowsPerPage;
+
+            filteredRows.slice(start, end).forEach(row => {
+                row.style.display = "";
+            });
+
+            let totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            document.getElementById("pageInfo").innerText =
+                `Page ${currentPage} of ${totalPages}`;
+        }
+
+        document.getElementById("searchInput").addEventListener("input", applyFilters);
+        document.getElementById("programFilter").addEventListener("change", applyFilters);
+        document.getElementById("dateFilter").addEventListener("change", applyFilters);
+
+        document.getElementById("rowsPerPage").addEventListener("change", function() {
+            rowsPerPage = parseInt(this.value);
+            applyFilters();
+        });
+
+        document.getElementById("prevBtn").addEventListener("click", function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", function() {
+            let totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+        // Initial load
+        applyFilters();
+    });
+</script>
+
 </html>

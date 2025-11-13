@@ -13,6 +13,11 @@ public class Registration {
     private String name;
     private String email;
     private String phone;
+    private String countryCity;
+
+    @Column(name = "created_at")
+    private String createdAt;
+
 
     @Column(name = "connected_with")
     private String connectedWith;
@@ -69,4 +74,11 @@ public class Registration {
     public void setSelectedTrainings(String selectedTrainings) {
         this.selectedTrainings = selectedTrainings;
     }
+
+    public String getCountryCity() { return countryCity; }
+    public void setCountryCity(String countryCity) { this.countryCity = countryCity; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
 }

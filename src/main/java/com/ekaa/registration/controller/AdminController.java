@@ -44,7 +44,17 @@ public class AdminController {
 
         // --- HEADER ROW ---
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"Name", "Email", "Phone", "Connected With", "Selected Trainings"};
+        String[] headers = {
+                "Sl No",
+                "Submitted On",
+                "Program",
+                "Country/City",
+                "Connected With",
+                "Name",
+                "Phone No",
+                "Email"
+        };
+
 
         // Header Style
         CellStyle headerStyle = workbook.createCellStyle();
@@ -66,11 +76,16 @@ public class AdminController {
         int rowCount = 1;
         for (Registration reg : registrations) {
             Row row = sheet.createRow(rowCount++);
-            row.createCell(0).setCellValue(reg.getName());
-            row.createCell(1).setCellValue(reg.getEmail());
-            row.createCell(2).setCellValue(reg.getPhone());
-            row.createCell(3).setCellValue(reg.getConnectedWith());
-            row.createCell(4).setCellValue(reg.getSelectedTrainings());
+            row.createCell(0).setCellValue(rowCount - 1); // Sl No
+            row.createCell(1).setCellValue(reg.getCreatedAt());
+            row.createCell(2).setCellValue(reg.getSelectedTrainings());
+            row.createCell(3).setCellValue(reg.getCountryCity());
+            row.createCell(4).setCellValue(reg.getConnectedWith());
+            row.createCell(5).setCellValue(reg.getName());
+            row.createCell(6).setCellValue(reg.getPhone());
+            row.createCell(7).setCellValue(reg.getEmail());
+
+
         }
 
         // Auto-size columns for neatness
@@ -81,5 +96,10 @@ public class AdminController {
         // Write to response stream
         workbook.write(response.getOutputStream());
         workbook.close();
+    }
+
+    @GetMapping("/admin-login")
+    public String showLoginPage() {
+        return "admin-login";
     }
 }

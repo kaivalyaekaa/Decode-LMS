@@ -29,10 +29,12 @@ public class RegistrationController {
     private record RegistrationRequest(
             String name,
             String email,
+            String countryCity,
             String phone,
             String connectedWith,
-            List<String> selectedTrainings // Correctly handles the incoming JSON array
+            List<String> selectedTrainings
     ) {}
+
 
     @GetMapping("/")
     public String redirectToRegistration() {
@@ -72,7 +74,14 @@ public class RegistrationController {
         registration.setName(request.name());
         registration.setEmail(request.email());
         registration.setPhone(request.phone());
+        registration.setCountryCity(request.countryCity());
         registration.setConnectedWith(request.connectedWith());
+
+// Save Date & Time
+        String timestamp = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+        registration.setCreatedAt(timestamp);
+
 
         // 3. Process selectedTrainings (from List<String> in DTO to comma-separated String for DB entity)
         List<String> selectedTrainingsList = request.selectedTrainings();
@@ -92,7 +101,21 @@ public class RegistrationController {
         registrationRepository.save(registration);
 
         // 5. Return success response
-        response.put("message", "Registration successful! One of our team from EKAA will contact you within 48 hours.");
+        response.put("message",
+                "Thank you for registering with us.<br>" +
+                        "Click below to connect with us on Call/WhatsApp:<br> <br>" +
+
+                        "<a href='https://wa.me/919833402655' target='_blank' " +
+                        "style='color:#800080; font-weight:bold;'>Nirmal Kaur : +91 98334 02655</a><br>" +
+
+                        "<a href='https://wa.me/919792250000' target='_blank' " +
+                        "style='color:#800080; font-weight:bold;'>Amitanshu Nath: +91 97922 50000</a><br><br>" +
+
+                        "<a href='https://www.ekaa.co.in/schedule/' target='_blank' " +
+                        "style='color:#800080; font-weight:bold;'>Click here to view the schedule</a>"
+        );
+
+
         return ResponseEntity.ok(response);
 
     }
