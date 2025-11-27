@@ -58,6 +58,33 @@ All errors have been debugged and fixed. The project is now fully working!
    - ✅ JWT token authentication works
    - ✅ Redirects to admin panel after successful login
    - ✅ Protected routes require authentication
+
+3. **Admin Panel**
+   - ✅ Displays all registrations in a table
+   - ✅ Shows registration data (Name, Email, Phone, etc.)
+   - ✅ Timestamp formatting works correctly
+   - ✅ "No records found" message when empty
+   - ✅ **UI Improved:** Table is now scrollable and neatly contained
+   - ✅ **Delete Functionality:** Verified end-to-end (Create -> Delete -> Verify Empty)
+
+4. **Excel Export**
+   - ✅ Download button works without errors
+   - ✅ File downloads correctly as `Ekaa_Registrations.xlsx`
+   - ✅ Page stays on admin panel (no navigation)
+   - ✅ Authorization works properly
+
+5. **UI Polish**
+   - ✅ Admin Login: Password input now matches username input style
+   - ✅ Admin Panel: Added horizontal scrolling for table on smaller screens/overflow
+   - ✅ Cleaned up CSS to remove duplicates
+
+6. **Database Integration**
+   - ✅ MongoDB connection successful
+   - ✅ Data persists correctly
+   - ✅ Registrations are saved and retrieved properly
+
+## How to Run the Project
+
 ### Quick Start (Easiest Way)
 1. Make sure MongoDB is running on port 27017
 2. Double-click `start-both.bat`
