@@ -412,6 +412,7 @@ footer {
 /* Admin Panel Table Styling */
 .admin-container table {
     font-size: 0.9rem;
+    border-collapse: collapse;
 }
 
 .admin-container th,
@@ -420,6 +421,18 @@ footer {
     white-space: normal;
     word-wrap: break-word;
     vertical-align: top;
+    border: 1px solid #e5e7eb;
+}
+
+.admin-container th {
+    background-color: #800080;
+    color: #fff;
+    font-weight: 600;
+    border-color: #6a0dad;
+}
+
+.admin-container tbody tr:hover {
+    background-color: #f9fafb;
 }
 
 .admin-container th:first-child,

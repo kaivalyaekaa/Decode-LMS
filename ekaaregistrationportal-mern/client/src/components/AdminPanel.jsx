@@ -100,19 +100,17 @@ const AdminPanel = () => {
                     <button className="refresh-btn" onClick={handleLogout} style={{ backgroundColor: '#c00' }}>Logout</button>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
                     <input
                         type="text"
                         id="search"
                         placeholder="Search anything..."
-                        className="border p-2 rounded w-60"
-                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}
+                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem', flex: '1', minWidth: '150px' }}
                         onChange={handleFilterChange}
                     />
                     <select
                         id="program"
-                        className="border p-2 rounded w-60"
-                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}
+                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem', flex: '1', minWidth: '150px' }}
                         onChange={handleFilterChange}
                     >
                         <option value="">Filter by Program</option>
@@ -123,15 +121,13 @@ const AdminPanel = () => {
                     <input
                         type="text"
                         id="date"
-                        placeholder="Filter by Date (dd-mm-yyyy)"
-                        className="border p-2 rounded"
-                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}
+                        placeholder="dd-mm-yyyy"
+                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem', width: '150px' }}
                         onChange={handleFilterChange}
                     />
                     <select
                         id="rowsPerPage"
-                        className="border p-2 rounded"
-                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem' }}
+                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '0.25rem', width: '120px' }}
                         onChange={(e) => setPagination({ ...pagination, rowsPerPage: Number(e.target.value), currentPage: 1 })}
                     >
                         <option value="10">10 rows</option>
