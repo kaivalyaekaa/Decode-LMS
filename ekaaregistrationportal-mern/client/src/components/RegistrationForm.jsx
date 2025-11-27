@@ -85,17 +85,17 @@ const RegistrationForm = () => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="phone">Phone</label>
+                        <label htmlFor="phone">Mobile</label>
                         <input type="tel" id="phone" value={formData.phone} onChange={handleInputChange} required />
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="countryCity">Country / City</label>
+                        <label htmlFor="countryCity">Country, City</label>
                         <input type="text" id="countryCity" value={formData.countryCity} onChange={handleInputChange} required />
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="connectedWith">Who from Team EKAA told you about this program? (optional)</label>
+                        <label htmlFor="connectedWith">From whom in Team EKAA did you learn about this/these program(s)? (optional)</label>
                         <input type="text" id="connectedWith" value={formData.connectedWith} onChange={handleInputChange} />
                     </div>
 
@@ -152,7 +152,7 @@ const RegistrationForm = () => {
                                     <LevelCheckbox value="Workshops - Koshas" label="Koshas" checked={isChecked("Workshops - Koshas")} onChange={handleCheckboxChange} />
                                     <LevelCheckbox value="Workshops - Elemental Currents" label="Elemental Currents" checked={isChecked("Workshops - Elemental Currents")} onChange={handleCheckboxChange} />
                                     <LevelCheckbox value="Workshops - The Labyrinth" label="The Labyrinth" checked={isChecked("Workshops - The Labyrinth")} onChange={handleCheckboxChange} />
-                                    <LevelCheckbox value="Workshops - Tamas" label="Tamas – Understanding Laws of Karma" checked={isChecked("Workshops - Tamas")} onChange={handleCheckboxChange} />
+                                    <LevelCheckbox value="Workshops - Tamas" label="Tamas – Understanding Laws of Karma" checked={isChecked("Workshops - Tamas")} onChange={handleCheckboxChange} className="full-width" />
                                 </td>
                             </tr>
 
@@ -201,14 +201,14 @@ const RegistrationForm = () => {
     );
 };
 
-const LevelCheckbox = ({ value, label, checked, onChange }) => {
+const LevelCheckbox = ({ value, label, checked, onChange, className = '' }) => {
     const handleClick = () => {
         // Create a synthetic event to match what onChange expects
         onChange({ target: { value, checked: !checked } });
     };
 
     return (
-        <div className={`level-checkbox ${checked ? 'is-checked' : ''}`} onClick={handleClick}>
+        <div className={`level-checkbox ${checked ? 'is-checked' : ''} ${className}`} onClick={handleClick}>
             <input type="checkbox" value={value} checked={checked} onChange={onChange} readOnly />
             <label>{label}</label>
         </div>
