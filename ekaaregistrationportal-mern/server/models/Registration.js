@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const registrationSchema = new mongoose.Schema({
-    name: {
+    fullName: {
         type: String,
         required: true
     },
@@ -13,30 +13,68 @@ const registrationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    countryCity: {
+    cityCountry: {
         type: String,
         required: true
     },
-    connectedWith: {
+    region: {
         type: String,
-        default: ''
+        enum: ['IN', 'US', 'UAE'],
+        default: 'IN' // Default to India
     },
-    selectedTrainings: {
+    programLevel: {
         type: String,
-        default: ''
+        required: true,
+        enum: ['Level 1 – Decode Your Mind', 'Level 2 – Decode Your Behavior', 'Level 3 – Decode Your Relationship', 'Level 4 – Decode Your Blueprint']
     },
-    createdAt: {
+    referralSource: {
+        type: String
+    },
+    referrerName: {
+        type: String
+    },
+    mode: {
         type: String,
-        default: () => {
-            const now = new Date();
-            const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const year = now.getFullYear();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-        }
+        required: true,
+        enum: ['Online', 'Offline']
+    },
+    assignedInstructorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    batchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Batch',
+        default: null
+    },
+    registrationDate: {
+        type: Date,
+        default: Date.now
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Pending', 'Paid', 'Emergency Override'],
+        default: 'Pending'
+    },
+    paymentMode: {
+        type: String,
+        enum: ['Online', 'Offline', null],
+        default: null
+    },
+    transactionId: {
+        type: String
+    },
+    certificateStatus: {
+        type: String,
+        enum: ['Pending', 'Issued', 'Revoked'],
+        default: 'Pending'
+    },
+    certificateIssuedDate: {
+        type: Date
+    },
+    managementNotes: {
+        type: String
     }
 });
 

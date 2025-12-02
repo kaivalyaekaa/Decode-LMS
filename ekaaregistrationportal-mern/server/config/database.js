@@ -1,3 +1,10 @@
+// =================================================================================================
+// DEPRECATED / LEGACY - DO NOT USE
+// This file contains a Sequelize (MySQL) database configuration that is not used in this project.
+// The project uses Mongoose (MongoDB) for all database operations.
+// This file is kept for historical purposes only and should not be imported or used.
+// =================================================================================================
+
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 

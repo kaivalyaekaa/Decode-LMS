@@ -1,97 +1,114 @@
-# Ekaa Registration Portal (MERN Stack)
+# DECODE LMS - Developer Guide
 
-This is a complete rewrite of the Ekaa Registration Portal using the MERN stack (MongoDB, Express, React, Node.js).
+## Overview
+The DECODE LMS is a MERN stack application designed to manage student registrations, payments, and certification for the DECODE program. It features role-based access control for different stakeholders.
 
-## Folder Structure
+## Technology Stack
+- **Frontend**: React (Vite), Tailwind CSS
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB (Mongoose)
+- **Authentication**: JWT (JSON Web Tokens)
+- **Other Tools**: ExcelJS (Export), PDFKit (Certificates)
 
-- `server/`: Backend API (Node.js + Express + MongoDB)
-- `client/`: Frontend Application (React + Vite)
+## Project Structure
+```
+ekaaregistrationportal-mern/
+├── client/                 # React Frontend
+│   ├── src/
+│   │   ├── components/     # UI Components & Pages
+│   │   ├── services/       # API Service (Axios)
+│   │   └── App.jsx         # Main App Component & Routing
+│   └── vite.config.js      # Vite Configuration
+├── server/                 # Node.js Backend
+│   ├── controllers/        # Business Logic
+│   ├── models/             # Mongoose Schemas
+│   ├── routes/             # API Routes
+│   ├── middleware/         # Auth & Error Handling
+│   └── server.js           # Entry Point
+└── README.md               # This File
+```
 
-## Prerequisites
+## Setup & Installation
 
-- Node.js installed (v14 or higher)
-- MongoDB installed and running locally on port 27017
+1.  **Prerequisites**: Node.js, MongoDB.
+2.  **Install Dependencies**:
+    ```bash
+    # Backend
+    cd server
+    npm install
 
-## Quick Start
+    # Frontend
+    cd ../client
+    npm install
+    ```
+3.  **Environment Variables**:
+    Create `.env` in `server/`:
+    ```env
+    MONGO_URI=mongodb://localhost:27017/decode_lms
+    JWT_SECRET=your_jwt_secret
+    PORT=5000
+    SERVER_URL=http://localhost:5000
+    CLIENT_URL=http://localhost:3000
+    EMAIL_USER=your_email@gmail.com
+    EMAIL_PASS=your_app_password
+    ```
+4.  **Run Application**:
+    ```bash
+    # Backend (Terminal 1)
+    cd server
+    node server.js
 
-### Easiest Way (Windows)
+    # Frontend (Terminal 2)
+    cd client
+    npm run dev
+    ```
 
-Simply double-click `start-both.bat` to start both server and client in separate windows!
+## User Roles & Credentials (Default)
 
-### Manual Setup
+| Role | Username | Password | Access |
+|------|----------|----------|--------|
+| **Registration Admin** | `regadmin` | `password123` | Manage users, view all registrations. |
+| **Instructor** | `instructor` | `password123` | Register students, view assigned students. |
+| **Finance** | `finance` | `password123` | Approve payments, view financial stats. |
+| **Management** | `management` | `password123` | Issue certificates, manage templates, view overall stats. |
 
-#### 1. Backend Setup
+## Core Workflows
 
-1. Navigate to the `server` directory:
-   ```bash
-   cd server
-   ```
+### 1. Student Registration
+- **Public**: Students register via the public form (`/`).
+- **Instructor**: Instructors can register students via their dashboard.
+- **Data**: Saved to `Registration` collection with `paymentStatus: 'Pending'`.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### 2. Payment Approval (Finance)
+- Finance team logs in.
+- Views "Pending Approvals".
+- Updates status to `Paid` (Mode: Online/Offline).
+- **Action**: `PUT /api/finance/registration/:id/payment`.
 
-3. Configure Environment Variables:
-   - A `.env` file has been created with default values
-   - Default MongoDB URI: `mongodb://localhost:27017/ekaaregistration`
-   - Default Port: `5000`
-   - Admin credentials: `admin@ekaaglobal.com` / `Admin@123`
+### 3. Certification (Management)
+- Management team logs in.
+- Views "Pending Approvals" (Paid but not Issued).
+- Selects a student and issues certificate.
+- **Process**:
+    1.  Checks if `paymentStatus` is 'Paid'.
+    2.  Generates PDF Certificate.
+    3.  Generates Digital Signature.
+    4.  Saves to `Certificate` collection.
+    5.  Updates `Registration` status to `Issued`.
 
-4. Start the server:
-   ```bash
-   node server.js
-   ```
-   The server will run on `http://localhost:5000`
+## API Endpoints (Key)
 
-#### 2. Frontend Setup
-
-1. Open a new terminal and navigate to the `client` directory:
-   ```bash
-   cd client
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the React application:
-   ```bash
-   npx vite
-   ```
-   The application will run on `http://localhost:3000`
-
-## Features
-
-- **Registration Form**: Complete replication of the original registration form with all fields and validations
-- **Admin Panel**: View all registrations, filter/search, and export to Excel  
-- **Admin Login**: Secure authentication with JWT tokens
-- **Data Export**: Download registrations as formatted Excel file
-- **Data Flow**: React Frontend → Express API → MongoDB Database
-
-## API Endpoints
-
-- `POST /api/registration`: Submit a new registration (public)
-- `POST /api/auth/login`: Admin login
-- `GET /api/auth/verify`: Verify admin token
-- `GET /api/registrations`: Fetch all registrations (admin only)
-- `DELETE /api/registration/:id`: Delete a registration (admin only)
-- `GET /api/export-excel`: Download registrations as Excel file (admin only)
-
-## Admin Access
-
-- **URL**: `http://localhost:3000/admin-login`
-- **Username**: `admin@ekaaglobal.com`
-- **Password**: `Admin@123`
+- **Auth**: `/api/auth/login`
+- **Registration Admin**: `/api/registration-admin/registrations`, `/api/registration-admin/users`
+- **Instructor**: `/api/instructor/register-student`, `/api/instructor/my-students`
+- **Finance**: `/api/finance/registrations/pending`, `/api/finance/registration/:id/payment`
+- **Management**: `/api/management/certificate/approve`, `/api/management/templates`
 
 ## Troubleshooting
 
-If you encounter PowerShell execution policy errors:
-- Use the provided `.bat` files instead
-- Or run commands directly with `node` instead of `npm`
+- **Blank Page**: Check `client/src/services/api.js` for correct imports and route names.
+- **500 Errors**: Check backend console logs. Ensure MongoDB is running.
+- **CORS Issues**: Ensure `server/server.js` has `cors()` enabled and frontend proxy is configured in `vite.config.js`.
 
-If MongoDB connection fails:
-- Ensure MongoDB is installed and running
-- Check that MongoDB is listening on port 27017
-
+---
+*Generated by Antigravity*

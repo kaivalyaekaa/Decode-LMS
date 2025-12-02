@@ -5,6 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // Public route
 router.post('/registration', registrationController.createRegistration);
+router.post('/student-login', registrationController.studentLogin);
 
 // Protected routes (require authentication)
 router.get('/registrations', authMiddleware, registrationController.getRegistrations);
@@ -12,4 +13,3 @@ router.delete('/registration/:id', authMiddleware, registrationController.delete
 router.get('/export-excel', authMiddleware, registrationController.exportRegistrations);
 
 module.exports = router;
-
