@@ -108,7 +108,7 @@ const RegistrationForm = () => {
                             <input id="cityCountry" type="text" name="cityCountry" value={formData.cityCountry} onChange={handleChange} required className="form-input" />
                         </div>
                          <div className="form-group">
-                            <label htmlFor="referrerName">Referrer Name</label>
+                            <label htmlFor="referrerName">Trainer Name</label>
                             <input id="referrerName" type="text" name="referrerName" value={formData.referrerName} onChange={handleChange} className="form-input" />
                         </div>
 

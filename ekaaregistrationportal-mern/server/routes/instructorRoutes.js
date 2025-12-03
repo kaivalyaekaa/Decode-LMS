@@ -22,6 +22,7 @@ router.get('/my-registrations', instructorController.getMyStudents);
 
 // Batch routes
 router.get('/my-batches', instructorController.getMyBatches);
+router.post('/batch', instructorController.createBatch);
 router.get('/batch-students', instructorController.getBatchStudentsWithAttendance);
 
 // Attendance routes

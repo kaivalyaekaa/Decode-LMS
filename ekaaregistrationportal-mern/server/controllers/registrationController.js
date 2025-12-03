@@ -13,9 +13,9 @@ exports.createRegistration = async (req, res) => {
                 message: "Full Name, Email, Phone, City/Country, Program Level, Mode, and Region are required."
             });
         }
-        
+
         const existingRegistration = await Registration.findOne({ email: email.toLowerCase(), programLevel: programLevel });
-        if(existingRegistration) {
+        if (existingRegistration) {
             return res.status(400).json({ success: false, message: 'You have already registered for this program level.' });
         }
 
@@ -35,6 +35,8 @@ exports.createRegistration = async (req, res) => {
 
         let successMessage = `Thank you for registering! Your registration for ${programLevel} has been received.`;
         // Here you can add region-specific payment logic in the future
+        // Payment logic commented out for simple registration flow
+        /*
         switch(region) {
             case 'IN':
                 // initiateRazorpayPayment(newRegistration);
@@ -48,6 +50,7 @@ exports.createRegistration = async (req, res) => {
                 successMessage += "<br>Our team will contact you shortly regarding payment."
                 break;
         }
+        */
 
         res.status(201).json({
             success: true,

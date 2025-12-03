@@ -24,6 +24,7 @@ export const studentLogin = (data) => api.post('/student-login', data);
 
 // Instructor
 export const getInstructorBatches = () => api.get('/instructors/my-batches');
+export const createBatch = (data) => api.post('/instructors/batch', data);
 export const getBatchStudents = (batchId) => api.get(`/instructors/batch-students`, { params: { batchId } });
 export const markAttendance = (data) => api.post('/instructors/attendance/mark', data);
 export const bulkMarkAttendance = (data) => api.post('/instructors/attendance/bulk', data);

@@ -93,7 +93,7 @@ const markAttendance = async (req, res) => {
         if (!registration) {
             return res.status(404).json({ success: false, message: 'Registration not found.' });
         }
-        
+
         if (registration.batchId.toString() !== batchId) {
             return res.status(400).json({ success: false, message: 'Student does not belong to this batch.' });
         }
@@ -140,7 +140,7 @@ const bulkMarkAttendance = async (req, res) => {
         if (registrations.length !== registrationIds.length) {
             return res.status(400).json({ success: false, message: 'One or more students do not belong to the specified batch.' });
         }
-        
+
         const registrationMap = new Map(registrations.map(r => [r._id.toString(), r]));
 
         const bulkOps = attendanceData.map(record => {
@@ -213,11 +213,57 @@ const registerStudent = async (req, res) => {
 const getMyStudents = async (req, res) => {
     try {
         const instructorId = req.user.userId;
-        const registrations = await Registration.find({ registeredBy: instructorId }).sort({ registrationDate: -1 });
+        // Fetch students registered by this instructor OR assigned to this instructor
+        const registrations = await Registration.find({
+            $or: [
+                { registeredBy: instructorId },
+                { assignedInstructorId: instructorId }
+            ]
+        }).sort({ registrationDate: -1 });
         res.json({ success: true, registrations });
     } catch (error) {
         console.error("Error fetching my registrations:", error);
         res.status(500).json({ success: false, message: "Error fetching registrations" });
+    }
+};
+
+// Create a new batch
+const createBatch = async (req, res) => {
+    try {
+        const { batchCode, programLevel, startDate, mode, studentIds } = req.body;
+        const instructorId = req.user.userId;
+
+        if (!batchCode || !programLevel || !startDate) {
+            return res.status(400).json({ success: false, message: 'Batch Code, Program Level, and Start Date are required.' });
+        }
+
+        const newBatch = new Batch({
+            batchCode,
+            programLevel,
+            startDate,
+            mode: mode || 'Online',
+            instructorId,
+            createdBy: instructorId,
+            currentStudents: studentIds ? studentIds.length : 0
+        });
+
+        await newBatch.save();
+
+        // If students are selected, update their batchId
+        if (studentIds && studentIds.length > 0) {
+            await Registration.updateMany(
+                { _id: { $in: studentIds } },
+                { $set: { batchId: newBatch._id, assignedInstructorId: instructorId } }
+            );
+        }
+
+        res.status(201).json({ success: true, message: 'Batch created successfully', batch: newBatch });
+    } catch (error) {
+        console.error('Error creating batch:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: 'Batch Code must be unique.' });
+        }
+        res.status(500).json({ success: false, message: 'Error creating batch' });
     }
 };
 
@@ -282,5 +328,6 @@ module.exports = {
     getMyStudents,
     addStudentNote,
     getStudentNotes,
-    getMyBatches
+    getMyBatches,
+    createBatch
 };

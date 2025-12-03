@@ -6,7 +6,8 @@ import {
     getMyStudents,
     registerStudentByInstructor,
     markAttendance,
-    bulkMarkAttendance
+    bulkMarkAttendance,
+    createBatch
 } from '../services/api';
 import { PROGRAM_LEVELS, PAYMENT_STATUSES } from '../constants'; // Import constants
 
@@ -15,7 +16,7 @@ const InstructorDashboard = () => {
     const [selectedBatchId, setSelectedBatchId] = useState('');
     const [students, setStudents] = useState([]);
     const [registeredByMeRegistrations, setRegisteredByMeRegistrations] = useState([]);
-    const [activeTab, setActiveTab] = useState('attendance'); // attendance, my_students, register
+    const [activeTab, setActiveTab] = useState('attendance'); // attendance, my_students, register, create_batch
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -32,6 +33,16 @@ const InstructorDashboard = () => {
         mode: 'Online'
     });
     const [regMessage, setRegMessage] = useState(null);
+
+    // Batch Creation Form State
+    const [batchForm, setBatchForm] = useState({
+        batchCode: '',
+        programLevel: '',
+        startDate: '',
+        mode: 'Online',
+        studentIds: []
+    });
+    const [batchMessage, setBatchMessage] = useState(null);
 
     const navigate = useNavigate();
 
@@ -77,7 +88,7 @@ const InstructorDashboard = () => {
             setLoading(false);
         }
     };
-    
+
     const fetchMyStudents = async () => {
         try {
             const registeredByMeRes = await getMyStudents();
@@ -107,7 +118,7 @@ const InstructorDashboard = () => {
             alert('Error marking attendance');
         }
     };
-    
+
     const handleBulkMarkAttendance = async (status) => {
         try {
             const attendanceData = students.map(student => ({ registrationId: student._id, status }));
@@ -151,6 +162,40 @@ const InstructorDashboard = () => {
         }
     };
 
+    const handleBatchSubmit = async (e) => {
+        e.preventDefault();
+        setBatchMessage(null);
+
+        if (!batchForm.programLevel || !batchForm.startDate || !batchForm.batchCode) {
+            setBatchMessage({ type: 'error', text: 'Please fill all required fields.' });
+            return;
+        }
+
+        try {
+            await createBatch(batchForm);
+            setBatchMessage({ type: 'success', text: 'Batch created successfully!' });
+            setBatchForm({
+                batchCode: '',
+                programLevel: '',
+                startDate: '',
+                mode: 'Online',
+                studentIds: []
+            });
+            fetchBatches(); // Refresh batches list
+        } catch (error) {
+            setBatchMessage({ type: 'error', text: error.response?.data?.message || 'Batch creation failed' });
+        }
+    };
+
+    const handleStudentSelection = (studentId) => {
+        setBatchForm(prev => {
+            const newStudentIds = prev.studentIds.includes(studentId)
+                ? prev.studentIds.filter(id => id !== studentId)
+                : [...prev.studentIds, studentId];
+            return { ...prev, studentIds: newStudentIds };
+        });
+    };
+
     if (loading && !batches.length) return <div className="spinner-container"><div className="spinner"></div></div>;
 
     return (
@@ -165,7 +210,7 @@ const InstructorDashboard = () => {
 
             <div className="dashboard-content">
                 <div className="nav-tabs">
-                    {['attendance', 'my_students', 'register'].map(tab => (
+                    {['attendance', 'my_students', 'register', 'create_batch'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -188,15 +233,15 @@ const InstructorDashboard = () => {
                                     ))}
                                 </select>
                             </div>
-                             <div className="form-group">
+                            <div className="form-group">
                                 <label htmlFor="attendance-date">Attendance Date</label>
                                 <input id="attendance-date" type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} className="form-input" />
                             </div>
                         </div>
-                        
+
                         <div className="flex-group" style={{ marginBottom: '1.5rem' }}>
-                             <button onClick={() => handleBulkMarkAttendance('Present')} className="btn btn-success">Mark All Present</button>
-                             <button onClick={() => handleBulkMarkAttendance('Absent')} className="btn btn-danger">Mark All Absent</button>
+                            <button onClick={() => handleBulkMarkAttendance('Present')} className="btn btn-success">Mark All Present</button>
+                            <button onClick={() => handleBulkMarkAttendance('Absent')} className="btn btn-danger">Mark All Absent</button>
                         </div>
 
                         <div className="table-container">
@@ -240,7 +285,7 @@ const InstructorDashboard = () => {
                 )}
 
                 {activeTab === 'my_students' && (
-                     <div className="card">
+                    <div className="card">
                         <h3>My Registered Students</h3>
                         <div className="table-container">
                             <table>
@@ -270,7 +315,7 @@ const InstructorDashboard = () => {
                                                 <td>
                                                     <span className={`status-badge status-${registration.paymentStatus.toLowerCase().replace(' ', '-')}`}>
                                                         {registration.paymentStatus}
-                                                     </span>
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))
@@ -396,6 +441,95 @@ const InstructorDashboard = () => {
                             </div>
 
                             <button type="submit" className="btn primary-btn">Register Student</button>
+                        </form>
+                    </div>
+                )}
+
+                {activeTab === 'create_batch' && (
+                    <div className="card form-card">
+                        <h3>Create New Batch</h3>
+                        {batchMessage && (
+                            <div className={`alert alert-${batchMessage.type === 'success' ? 'success' : 'error'}`}>
+                                {batchMessage.text}
+                            </div>
+                        )}
+                        <form onSubmit={handleBatchSubmit}>
+                            <div className="form-group">
+                                <label>Batch Code *</label>
+                                <input
+                                    type="text"
+                                    value={batchForm.batchCode}
+                                    onChange={e => setBatchForm({ ...batchForm, batchCode: e.target.value })}
+                                    required
+                                    placeholder="e.g. L1-JAN-2024"
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Program Level *</label>
+                                <select
+                                    value={batchForm.programLevel}
+                                    onChange={e => setBatchForm({ ...batchForm, programLevel: e.target.value })}
+                                    required
+                                    className="form-select"
+                                >
+                                    <option value="">Select Level</option>
+                                    {PROGRAM_LEVELS.map((level) => (
+                                        <option key={level} value={level}>{level}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Start Date *</label>
+                                <input
+                                    type="date"
+                                    value={batchForm.startDate}
+                                    onChange={e => setBatchForm({ ...batchForm, startDate: e.target.value })}
+                                    required
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Mode</label>
+                                <select
+                                    value={batchForm.mode}
+                                    onChange={e => setBatchForm({ ...batchForm, mode: e.target.value })}
+                                    className="form-select"
+                                >
+                                    <option value="Online">Online</option>
+                                    <option value="Offline">Offline</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Select Students to Add (Optional)</label>
+                                <div className="student-selection-list" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', borderRadius: '4px' }}>
+                                    {registeredByMeRegistrations.length === 0 ? (
+                                        <p className="text-muted">No students available to add.</p>
+                                    ) : (
+                                        registeredByMeRegistrations.map(student => (
+                                            <div key={student._id} className="checkbox-item" style={{ marginBottom: '5px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    id={`student-${student._id}`}
+                                                    checked={batchForm.studentIds.includes(student._id)}
+                                                    onChange={() => handleStudentSelection(student._id)}
+                                                    style={{ marginRight: '10px' }}
+                                                />
+                                                <label htmlFor={`student-${student._id}`}>
+                                                    {student.fullName} ({student.email})
+                                                </label>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <button type="submit" className="btn primary-btn">Create Batch</button>
                         </form>
                     </div>
                 )}

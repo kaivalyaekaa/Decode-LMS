@@ -264,12 +264,8 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label>Referral Source</label>
+                                <label>Instructor name</label>
                                 <input type="text" name="referralSource" value={editForm.referralSource} onChange={e => setEditForm({...editForm, referralSource: e.target.value})} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label>Referrer Name</label>
-                                <input type="text" name="referrerName" value={editForm.referrerName} onChange={e => setEditForm({...editForm, referrerName: e.target.value})} className="form-input" />
                             </div>
                             <div className="form-group">
                                 <label>Mode</label>
