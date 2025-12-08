@@ -1,0 +1,25 @@
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+
+const authMiddleware = (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1]; // Bearer TOKEN
+
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
+        const publicKey = fs.readFileSync(path.join(__dirname, '../config/public.key'), 'utf8');
+        const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+        req.user = decoded;
+        next();
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired' });
+        }
+        return res.status(401).json({ message: 'Invalid token' });
+    }
+};
+
+module.exports = authMiddleware;
