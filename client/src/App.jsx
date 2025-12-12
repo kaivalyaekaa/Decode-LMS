@@ -18,6 +18,7 @@ function App() {
                 <Route path="/" element={<RegistrationForm />} />
                 <Route path="/registration" element={<RegistrationForm />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/admin/login" element={<LoginPage />} />
                 <Route path="/student-portal" element={<StudentPortal />} />
 
                 {/* Protected Routes */}
