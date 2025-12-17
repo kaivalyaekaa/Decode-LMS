@@ -1,10 +1,11 @@
 const Registration = require('../models/Registration');
 const path = require('path');
+const mongoose = require('mongoose');
 const Certificate = require('../models/Certificate');
 const CertificateTemplate = require('../models/CertificateTemplate');
 const Attendance = require('../models/Attendance');
 const Batch = require('../models/Batch');
-const { generateCertificateId, generateCertificateImage, decrypt: decryptCert } = require('../services/certificateService');
+const { generateCertificateId, generateCertificatePdf, generateCertificatePrefix } = require('../services/certificateService');
 const { decrypt } = require('../utils/encryption');
 const { sendCertificateEmail, sendNotificationEmail } = require('../services/emailService');
 
@@ -260,13 +261,19 @@ const approveCertificate = async (req, res) => {
             return res.status(400).json({ success: false, message: `Certificate already issued for ${targetProgramLevel}.` });
         }
 
-        // Generate ID: D2MP150126OF001 format
-        const certificateNumber = generateCertificateId({
-            programLevel: targetProgramLevel,
-            mode: registration.mode
-        });
+        // Generate Series: Count certificates matching this specific Prefix (Scoped per Instructor/Level/Date/Mode)
+        const prefix = generateCertificatePrefix(registration);
 
-        const imagePath = await generateCertificateImage({
+        // Count documents where certificateNumber starts with this prefix
+        const countExisting = await Certificate.countDocuments({
+            certificateNumber: { $regex: `^${prefix}` }
+        });
+        const series = countExisting + 1;
+
+        // Generate ID
+        const certificateNumber = generateCertificateId(registration, series);
+
+        const imagePath = await generateCertificatePdf({
             fullName: registration.fullName,
             programLevel: targetProgramLevel.split('–')[0].trim(),
             date: registration.manualDate ? new Date(registration.manualDate).toLocaleDateString() : new Date().toLocaleDateString(),
@@ -534,16 +541,269 @@ const setActiveTemplate = async (req, res) => {
     }
 };
 
+// --- BATCH MANAGEMENT NEW APIs ---
+
+// Get all Batches with student counts
+// Reject a certificate
+const rejectCertificate = async (req, res) => {
+    try {
+        const { registrationId, notes } = req.body;
+        const managementId = req.user.userId; // Assuming management user is logged in
+
+        if (!registrationId) {
+            return res.status(400).json({ success: false, message: 'Registration ID is required.' });
+        }
+
+        const registration = await Registration.findById(registrationId);
+        if (!registration) {
+            return res.status(404).json({ success: false, message: 'Registration not found.' });
+        }
+
+        registration.certificateStatus = 'Rejected';
+        registration.managementNotes = notes || '';
+        // registration.approvedBy = managementId; // Optional: track who rejected?
+
+        await registration.save();
+
+        // Optional: Send Rejection Email?
+        // await sendRejectionEmail(...)
+
+        res.json({ success: true, message: 'Certificate rejected successfully.' });
+    } catch (error) {
+        console.error('Error rejecting certificate:', error);
+        res.status(500).json({ success: false, message: 'Error rejecting certificate.' });
+    }
+};
+
+const getAllBatches = async (req, res) => {
+    try {
+        const batches = await Batch.find()
+            .populate('instructorId', 'fullName')
+            .sort({ startDate: -1 });
+
+        // Aggregate student counts strictly by batchId
+        const batchStats = await Registration.aggregate([
+            {
+                $group: {
+                    _id: '$batchId',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const statsMap = {};
+        batchStats.forEach(stat => {
+            if (stat._id) statsMap[stat._id.toString()] = stat.count;
+        });
+
+        const batchesWithCounts = batches.map(batch => ({
+            _id: batch._id,
+            batchCode: batch.batchCode,
+            programLevel: batch.programLevel,
+            instructorName: batch.instructorId ? batch.instructorId.fullName : 'Unknown',
+            startDate: batch.startDate,
+            endDate: batch.endDate,
+            studentCount: statsMap[batch._id.toString()] || 0,
+            status: batch.status
+        }));
+
+        res.json({ success: true, batches: batchesWithCounts });
+    } catch (error) {
+        console.error('Error fetching batches:', error);
+        res.status(500).json({ success: false, message: 'Error fetching batches' });
+    }
+};
+
+// Get students for a specific batch
+const getStudentsByBatch = async (req, res) => {
+    try {
+        const { batchId } = req.params;
+        // 1. Get Access to Certificate Model if not already imported globally or use mongoose.model
+        // Assuming Certificate is available or imported at top. It is used in approveCertificate.
+
+        let registrations = await Registration.aggregate([
+            { $match: { batchId: new mongoose.Types.ObjectId(batchId) } },
+            {
+                $lookup: {
+                    from: 'attendances',
+                    let: { studentId: '$_id', batchId: '$batchId' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$studentRegistrationId', '$$studentId'] },
+                                        { $eq: ['$batchId', '$$batchId'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'attendanceRecords'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'certificates',
+                    localField: '_id',
+                    foreignField: 'studentRegistrationId',
+                    as: 'certInfo'
+                }
+            },
+            {
+                $unwind: { path: "$certInfo", preserveNullAndEmptyArrays: true }
+            },
+            // Debugging Stage: You can add specific logging if environment supports it, but simple console.log after fetching is better.
+            {
+                $project: {
+                    fullName: 1,
+                    email: 1,
+                    phone: 1,
+                    paymentStatus: 1,
+                    certificateStatus: 1,
+                    // Calculate attendance summary
+                    attendancePresent: {
+                        $size: {
+                            $filter: {
+                                input: '$attendanceRecords',
+                                as: 'att',
+                                cond: { $eq: ['$$att.status', 'Present'] }
+                            }
+                        }
+                    },
+                    attendanceAbsent: {
+                        $size: {
+                            $filter: {
+                                input: '$attendanceRecords',
+                                as: 'att',
+                                cond: { $eq: ['$$att.status', 'Absent'] }
+                            }
+                        }
+                    },
+                    attendanceTotal: { $size: '$attendanceRecords' },
+                    certificateUrl: '$certInfo.certificateUrl',
+                    certificateNumber: '$certInfo.certificateNumber'
+                }
+            },
+            { $sort: { fullName: 1 } }
+        ]);
+
+        // Decrypt email/phone
+        const decryptedRegistrations = registrations.map(reg => ({
+            ...reg,
+            email: decrypt(reg.email),
+            phone: decrypt(reg.phone)
+        }));
+
+        const statsMap = {}; // Not used here properly? 
+
+        // Log one student's attendance for debugging
+        if (registrations.length > 0) {
+            console.log(`[BatchDebug] First student: ${registrations[0].fullName}, AttPresent: ${registrations[0].attendancePresent}, Records: ${registrations[0].attendanceReport?.length || 'N/A'}`);
+        }
+
+        res.json({ success: true, students: registrations });
+    } catch (error) {
+        console.error('Error fetching batch students:', error);
+        res.status(500).json({ success: false, message: 'Error fetching batch students' });
+    }
+};
+
+// Download all certificates for a batch (ZIP)
+const archiver = require('archiver');
+const fs = require('fs');
+
+const downloadBatchCertificates = async (req, res) => {
+    try {
+        const { batchId } = req.params;
+
+        // Find certificates for students in this batch
+        // 1. Get student IDs in batch
+        const students = await Registration.find({ batchId }).select('_id');
+        const studentIds = students.map(s => s._id);
+
+        if (studentIds.length === 0) {
+            return res.status(404).json({ success: false, message: 'No students found in this batch.' });
+        }
+
+        // 2. Find certificates
+        const certificates = await Certificate.find({
+            studentRegistrationId: { $in: studentIds }
+        });
+
+        if (certificates.length === 0) {
+            return res.status(404).json({ success: false, message: 'No certificates found for this batch.' });
+        }
+
+        // 3. Create ZIP
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        res.attachment(`Batch-Certificates-${batchId}.zip`);
+
+        archive.on('error', (err) => {
+            console.error('Archive Error:', err);
+            res.status(500).json({ success: false, message: 'Error creating zip' });
+        });
+
+        // Pipe archive data to the response
+        archive.pipe(res);
+
+        console.log(`[BatchDownload] Found ${certificates.length} certificates for batch ${batchId}`);
+        let filesAdded = 0;
+
+        for (const cert of certificates) {
+            if (cert.certificateUrl) {
+                // Ensure we handle both URL and file path formats
+                // e.g. http://localhost:5000/certificates/CERT-123.pdf OR /certificates/CERT-123.pdf
+                const fileName = cert.certificateUrl.split('/').pop().split('\\').pop();
+                const filePath = path.join(__dirname, '../certificates', fileName);
+
+                console.log(`[BatchDownload] Processing: ${cert.certificateUrl}`);
+                console.log(`[BatchDownload] Target File: ${fileName}`);
+                console.log(`[BatchDownload] Full Path: ${filePath}`);
+
+                if (fs.existsSync(filePath)) {
+                    archive.file(filePath, { name: fileName });
+                    filesAdded++;
+                    console.log(`[BatchDownload] Added: ${fileName}`);
+                } else {
+                    console.error(`[BatchDownload] FILE MISSING: ${filePath}`);
+                }
+            }
+        }
+
+        console.log(`[BatchDownload] Total files added to zip: ${filesAdded}`);
+
+        if (filesAdded === 0) {
+            // If we already piped, we can't send JSON 404 easily if headers sent. 
+            // But archiver will create an empty zip if we don't finalize?
+            // Better to checking files before piping? 
+            // For now, let's just finalize. An empty ZIP is better than a hang.
+            console.warn('[BatchDownload] Warning: Creating empty zip.');
+        }
+
+        await archive.finalize();
+
+    } catch (error) {
+        console.error('Error downloading batch certificates:', error);
+        res.status(500).json({ success: false, message: 'Error generating zip' });
+    }
+};
+
 module.exports = {
     getAllRegistrationsStatus,
     getEligibleRegistrations,
     getIssuedCertificates,
     approveCertificate,
-    resendCertificateEmail,
+    resendCertificate: resendCertificateEmail,
     verifyCertificate,
     getDashboardStatistics,
     revokeCertificate,
     createTemplate,
     getTemplates,
-    setActiveTemplate
+    setActiveTemplate,
+    getAllBatches,
+    getStudentsByBatch,
+    downloadBatchCertificates,
+    rejectCertificate
 };

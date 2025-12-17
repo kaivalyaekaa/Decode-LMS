@@ -4,35 +4,46 @@ const path = require('path');
 const QRCode = require('qrcode');
 
 // Generate Unique ID: D2MP150126OF001
-const generateCertificateId = (registration) => {
-    // Level Map
-    const levelMap = {
-        'A Level': 'A', 'B Level': 'B', 'C Level': 'C', 'D Level': 'D'
-    };
-    const levelCode = levelMap[registration.programLevel] || 'X';
+const generateCertificatePrefix = (registration) => {
+    // 1. Level (e.g. "Level 1" -> "1")
+    const levelMatch = registration.programLevel.match(/\d+/);
+    const level = levelMatch ? levelMatch[0] : '1';
 
-    // Program Code (assuming "Decode" is the main program, used 'D' but user showed '2M' likely for 'Level 2'?)
-    // Aligning with user example: "D2MP..." 
-    // Let's assume user example "D2MP150126OF001" breaks down as:
-    // D2M (User said "Code", likely Level/Module) + P (Program) + Date + Mode + Seq
-    // I will use a simple mapping for now based on available data.
+    // 2. Trainer Code
+    let trainerName = registration.referrerName || 'Certified Trainer';
+    if (registration.assignedInstructorId && registration.assignedInstructorId.fullName) {
+        trainerName = registration.assignedInstructorId.fullName;
+    }
 
-    // Using a simplified robust format if exact mapping unknown:
-    // [Level 1char] + [Program 1char] + [Date 6char] + [Mode 2char] + [Seq 3char]
-    // Example: A (Level) + D (Decode) + 241208 (Date) + OF (Offline) + 001
+    const nameParts = trainerName.trim().split(/\s+/);
+    const firstInitial = nameParts[0] ? nameParts[0][0].toUpperCase() : 'X';
+    const secondInitial = nameParts.length > 1 ? nameParts[1][0].toUpperCase() : (nameParts[0].length > 1 ? nameParts[0][1].toUpperCase() : 'X');
+    const trainerCode = `${firstInitial}${secondInitial}`;
 
-    const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, ''); // YYMMDD
-    const modeCode = registration.mode.toLowerCase().includes('online') ? 'ON' : 'OF';
+    // 3. Date in DDMMYY format (Issue Date)
+    const dateObj = new Date();
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const yy = String(dateObj.getFullYear()).slice(-2);
+    const dateStr = `${dd}${mm}${yy}`;
 
-    // Sequence (Random 3 digits for now, ideal is DB counter)
-    const sequence = Math.floor(Math.random() * 900) + 100;
+    // 4. Mode (ON/OF)
+    const modeStr = (registration.mode || 'offline').toLowerCase().startsWith('on') ? 'ON' : 'OF';
 
-    return `${levelCode}D${dateStr}${modeCode}${sequence}`;
+    return `D${level}${trainerCode}${dateStr}${modeStr}`;
 };
 
-const generateCertificateImage = async (data) => {
+// Generate Unique ID: D<LEVEL><TRAINER_CODE><ddmmyy><MODE><COUNT>
+const generateCertificateId = (registration, series = '001') => {
+    const prefix = generateCertificatePrefix(registration);
+    const seriesStr = String(series).padStart(4, '0');
+    return `${prefix}${seriesStr}`;
+};
+
+const generateCertificatePdf = async (data) => {
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
+    console.log('[CertificateService] Generating PDF using NEW GEORGIA TEMPLATE for:', data.certificateId);
 
     // Read Logo as base64
     const logoPath = path.join(__dirname, '../certificates/logo_final.png');
@@ -46,176 +57,199 @@ const generateCertificateImage = async (data) => {
     // Generate QR Code
     const qrCodeDataUri = await QRCode.toDataURL(data.validationUrl);
 
-    // Using User's Exact HTML Structure
+    // Parse Program Level for Template: "Level 1 – Decode Your Mind" -> Level="Level 1", Name="Decode Your Mind"
+    let levelText = data.programLevel || '';
+    let programName = 'DECODE Program';
+
+    if (data.programLevel && data.programLevel.includes('–')) {
+        const parts = data.programLevel.split('–');
+        levelText = parts[0].trim(); // "Level 1"
+        programName = parts[1].trim(); // "Decode Your Mind"
+    } else if (data.programLevel) {
+        // Fallback if no dash
+        levelText = data.programLevel;
+    }
+
+    // Using User's New HTML Structure
     const htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
-            <meta charset="UTF-8">
-            <title>Certificate of Participation</title>
-            <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-            <style>
-                body {
-                    margin: 0;
-                    padding: 0;
-                    width: 210mm;
-                    height: 297mm;
-                    background: white;
-                    font-family: 'Poppins', sans-serif;
-                }
-                .container {
-                    padding: 30px 50px;
-                    text-align: center;
-                    position: relative; /* For absolute positioning of elements like QR */
-                }
-                .logo {
-                    margin-top: 20px;
-                    /* height: 120px; Remove fixed height to let img scale or set max-height */
-                }
-                .decode-bg {
-                    font-size: 140px;
-                    font-weight: 700;
-                    color: rgba(150, 75, 150, 0.18);
-                    letter-spacing: 8px;
-                    margin-top: -40px;
-                    position: relative; 
-                    z-index: 0;
-                }
-                .decode-text {
-                    font-size: 65px;
-                    font-weight: 700;
-                    color: #7A2A87;
-                    letter-spacing: 4px;
-                    margin-top: -140px; /* Overlap effect */
-                    position: relative;
-                    z-index: 1;
-                }
-                h1.title {
-                    font-family: 'Playfair Display', serif;
-                    font-size: 38px;
-                    font-weight: 400;
-                    color: #7A2A87;
-                    margin-top: 10px;
-                    margin-bottom: 20px;
-                }
-                .subtitle {
-                    font-size: 18px;
-                    margin-top: 20px;
-                }
-                .name {
-                    font-size: 42px;
-                    font-weight: 700;
-                    color: #7A2A87;
-                    margin: 20px 0;
-                }
-                .line {
-                    width: 60%;
-                    height: 2px;
-                    background: #7A2A87;
-                    margin: 10px auto 25px auto;
-                }
-                .program {
-                    font-size: 32px;
-                    font-weight: 700;
-                    color: #000;
-                    margin: 10px 0;
-                }
-                .footer {
-                    margin-top: 40px;
-                    font-size: 18px;
-                    font-weight: 600;
-                }
-                .trainer-role {
-                    font-size: 16px;
-                    margin-top: 5px;
-                }
-                .bottom-bar {
-                    margin-top: 40px;
-                    width: 100%;
-                    height: 12px;
-                    background: #7A2A87;
-                    border-bottom: 6px solid #CFAF4E;
-                }
-                .ucid {
-                    font-size: 14px;
-                    margin-top: 20px;
-                    text-align: left;
-                }
-                .seal {
-                    margin-top: -60px;
-                    float: right;
-                    margin-right: 20px;
-                }
-                 .qr-code-container {
-                    position: absolute;
-                    bottom: 120px;
-                    right: 50px;
-                }
-                .signature-block {
-                    text-align: center;
-                    margin-top: 30px;
-                    font-size: 14px;
-                }
-            </style>
+        <meta charset="UTF-8" />
+        <title>DECODE Certificate</title>
+
+        <style>
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: "Georgia", serif;
+                background: #ffffff;
+            }
+
+            .certificate {
+                width: 794px;
+                height: 1123px;
+                margin: auto;
+                padding: 60px 70px;
+                box-sizing: border-box;
+                position: relative;
+                border-top: 10px solid #7a2a87;
+                border-bottom: 10px solid #7a2a87;
+            }
+
+            /* Header */
+            .header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                color: #7a2a87;
+                margin-bottom: 10px;
+            }
+
+            .decode-title {
+                font-size: 64px;
+                font-weight: 800;
+                letter-spacing: 3px;
+                color: #7a2a87;
+                margin: 10px 0;
+            }
+
+            .subtitle {
+                font-size: 28px;
+                color: #7a2a87;
+                font-style: italic;
+                margin-bottom: 40px;
+            }
+
+            /* Body Text */
+            .content {
+                text-align: center;
+                font-size: 20px;
+                line-height: 1.8;
+                color: #000;
+            }
+
+            .student-name {
+                font-size: 36px;
+                font-weight: bold;
+                color: #7a2a87;
+                margin: 20px 0 10px;
+                border-bottom: 2px solid #7a2a87;
+                display: inline-block;
+                padding-bottom: 5px;
+                min-width: 400px;
+            }
+
+            .program-name {
+                font-size: 26px;
+                font-weight: bold;
+                margin-top: 10px;
+            }
+
+            /* Trainer */
+            .trainer-section {
+                margin-top: 80px;
+                text-align: center;
+            }
+
+            .trainer-name {
+                font-size: 20px;
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            .trainer-title {
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+
+            /* Footer */
+            .footer {
+                position: absolute;
+                bottom: 30px;
+                left: 70px;
+                right: 70px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 12px;
+            }
+
+            .ucid {
+                font-weight: bold;
+            }
+
+            .seal {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                border: 4px solid #c9a14a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #c9a14a;
+                font-weight: bold;
+            }
+        </style>
         </head>
+
         <body>
-            <div class="container">
-                <!-- LOGO -->
-                <div class="logo">
-                     <img src="${logoDataUri}" width="120" /> 
+            <div class="certificate">
+
+                <!-- HEADER -->
+                <div class="header">
+                    <div class="logo">EKAA</div>
+                    <div class="decode-title">DECODE</div>
+                    <div class="subtitle">Certificate Of Participation</div>
                 </div>
 
-                <!-- BACKGROUND WORDS -->
-                <div class="decode-bg">DECODE</div>
-                <div class="decode-text">DECODE</div>
+                <!-- CONTENT -->
+                <div class="content">
+                    <p>This is to certify that</p>
 
-                <!-- TITLE -->
-                <h1 class="title">Certificate Of Participation</h1>
+                    <div class="student-name">
+                        ${data.fullName}
+                    </div>
 
-                <div class="subtitle">This is to certify that</div>
+                    <p>
+                        has successfully completed <strong>${levelText}</strong> Program
+                    </p>
 
-                <!-- FULL NAME -->
-                <div class="name">${data.fullName}</div>
+                    <div class="program-name">
+                        ${programName}
+                    </div>
 
-                <div class="line"></div>
-
-                <!-- LEVEL + PROGRAM -->
-                <div class="subtitle">
-                    has successfully completed ${data.programLevel} Program
-                </div>
-
-                <div class="program">
-                    DECODE
-                </div>
-
-                <div class="subtitle">
-                    on ${data.date} &nbsp; &nbsp; in ${data.city}
+                    <p>
+                        on <strong>${data.date}</strong> in <strong>${data.city}</strong>
+                    </p>
                 </div>
 
                 <!-- TRAINER -->
+                <div class="trainer-section">
+                    <div class="trainer-name">${data.trainerName}</div>
+                    <div class="trainer-title">EKAA DECODE TRAINER</div>
+                </div>
+
+                <!-- FOOTER -->
                 <div class="footer">
-                    ${data.trainerName}
-                </div>
-                <div class="trainer-role">
-                    EKAA DECODE TRAINER
+                    <div class="ucid">
+                        UCID: ${data.certificateId}
+                    </div>
+
+                    <div class="seal">
+                        <img src="${qrCodeDataUri}" width="70" height="70" style="object-fit:contain;" />
+                    </div>
                 </div>
 
-                <!-- UCID + SEAL -->
-                <div class="bottom-bar"></div>
-
-                <div class="ucid">
-                    UCID: ${data.certificateId}
-                </div>
-
-                <div class="seal">
-                    <!-- QR Code as Seal/Verification -->
-                    <img src="${qrCodeDataUri}" width="100" />
-                </div>
-
-                <div class="signature-block">
-                    Signed by ABCDEF <br>
-                    Date: ${new Date().toISOString().split('T')[0].replace(/-/g, '.')} &nbsp; ${new Date().toLocaleTimeString()}
-                </div>
             </div>
         </body>
         </html>
@@ -226,20 +260,31 @@ const generateCertificateImage = async (data) => {
     await page.evaluateHandle('document.fonts.ready');
 
     // A4 Size @ 96 DPI is approx 794 x 1123
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+    // await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 }); // Not needed for PDF
 
     const outputDir = path.join(__dirname, '../certificates');
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir);
     }
 
-    const fileName = `CERT-${data.certificateId}.png`;
+    const fileName = `CERT-${data.certificateId}.pdf`;
     const outputPath = path.join(outputDir, fileName);
 
-    await page.screenshot({ path: outputPath, fullPage: true });
+    await page.pdf({
+        path: outputPath,
+        format: 'A4',
+        printBackground: true,
+        margin: {
+            top: '0px',
+            right: '0px',
+            bottom: '0px',
+            left: '0px'
+        }
+    });
+
     await browser.close();
 
     return outputPath;
 };
 
-module.exports = { generateCertificateId, generateCertificateImage };
+module.exports = { generateCertificateId, generateCertificatePdf, generateCertificatePrefix };

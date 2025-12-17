@@ -1,77 +1,129 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
+const { SESClient } = require("@aws-sdk/client-ses");
 
-const transporter = nodemailer.createTransport({
-    // Configure with your legitimate SMTP or use Ethereal for testing
-    // For now using a placeholder logging mock if ENV not set
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-        user: process.env.SMTP_USER || 'test',
-        pass: process.env.SMTP_PASS || 'test'
-    }
-});
 
+// ---------------------------------------------------------------------------
+// PLACEHOLDER / SAFETY CHECK
+// ---------------------------------------------------------------------------
+const isPlaceholder =
+    !process.env.AWS_SES_ACCESS_KEY ||
+    !process.env.AWS_SES_SECRET_KEY;
+
+
+// ---------------------------------------------------------------------------
+// TRANSPORTER DECLARATION
+// ---------------------------------------------------------------------------
+let transporter;
+
+
+// ---------------------------------------------------------------------------
+// MOCK TRANSPORTER (DEV / NO CREDENTIALS)
+// ---------------------------------------------------------------------------
+if (isPlaceholder) {
+    console.warn("⚠️ EMAIL WARNING: AWS SES not configured. Emails will NOT be sent.");
+
+    transporter = {
+        sendMail: async (mailOptions) => {
+            console.log("---------------------------------------------------");
+            console.log("MOCK EMAIL SEND (AWS SES NOT CONFIGURED)");
+            console.log("To:", mailOptions.to);
+            console.log("Subject:", mailOptions.subject);
+            console.log("---------------------------------------------------");
+            return { messageId: "MOCK-AWS-SES-ID" };
+        },
+    };
+}
+
+
+// ---------------------------------------------------------------------------
+// AWS SES REAL TRANSPORTER (PRODUCTION)
+// ---------------------------------------------------------------------------
+else {
+    const ses = new SESClient({
+        region: process.env.AWS_REGION,
+        credentials: {
+            accessKeyId: process.env.AWS_SES_ACCESS_KEY,
+            secretAccessKey: process.env.AWS_SES_SECRET_KEY,
+        },
+    });
+
+    transporter = nodemailer.createTransport({
+        SES: { ses },
+    });
+}
+
+
+// ---------------------------------------------------------------------------
+// SEND CERTIFICATE EMAIL FUNCTION
+// ---------------------------------------------------------------------------
 const sendCertificateEmail = async (toEmail, fullName, attachmentPath) => {
     try {
         const info = await transporter.sendMail({
-            from: '"Ekaa Decode LMS" <no-reply@ekaaportal.com>',
+            from: `"Ekaa Decode LMS" <${process.env.EMAIL_FROM}>`,
             to: toEmail,
-            subject: 'Your Course Completion Certificate - DECODE LMS',
-            text: `Dear ${fullName},\n\nCongratulations on completing your course! Please find your certificate attached.\n\nBest Regards,\nEkaa Team`,
+            subject: "Your Course Completion Certificate – DECODE LMS",
+            text: `Dear ${fullName},
+
+Congratulations on completing your program.
+Your certificate is attached.
+
+Regards,
+Ekaa Team`,
             html: `
-                <h3>Congratulations, ${fullName}!</h3>
-                <p>We are pleased to certify that you have successfully completed your program.</p>
-                <p>Your official certificate is attached to this email.</p>
-                <br>
-                <p>Best Regards,<br>Ekaa Team</p>
-            `,
+        <h3>Congratulations, ${fullName}!</h3>
+        <p>You have successfully completed your program.</p>
+        <p>Your certificate is attached.</p>
+        <br />
+        <p>Regards,<br />Ekaa Team</p>
+      `,
             attachments: [
                 {
-                    filename: 'Certificate.png',
-                    path: attachmentPath
-                }
-            ]
+                    filename: "Certificate.pdf",
+                    path: attachmentPath,
+                },
+            ],
         });
 
-        console.log('Message sent: %s', info.messageId);
+        console.log("Certificate email sent:", info.messageId);
         return true;
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error("Certificate email error:", error);
         return false;
     }
 };
 
-const sendOtpEmail = async (toEmail, otp) => {
-    // For Development/Testing only - Log OTP to console
-    console.log('---------------------------------------------------');
-    console.log(`DEV MODE: Your Login OTP is: ${otp}`);
-    console.log('---------------------------------------------------');
 
+// ---------------------------------------------------------------------------
+// SEND OTP EMAIL FUNCTION
+// ---------------------------------------------------------------------------
+const sendOtpEmail = async (toEmail, otp) => {
     try {
         const info = await transporter.sendMail({
-            from: '"Ekaa Security" <no-reply@ekaaportal.com>',
+            from: `"Ekaa Security" <${process.env.EMAIL_FROM}>`,
             to: toEmail,
-            subject: 'Your Login OTP - Ekaa Portal',
-            text: `Your One-Time Password (OTP) for login is: ${otp}\n\nThis code expires in 10 minutes.`,
+            subject: "Your Login OTP – Ekaa Portal",
+            text: `Your OTP is ${otp}. It expires in 10 minutes.`,
             html: `
-                <h3>Login Verification</h3>
-                <p>Your One-Time Password (OTP) is:</p>
-                <h2 style="color: #581c87; letter-spacing: 5px;">${otp}</h2>
-                <p>This code expires in 10 minutes.</p>
-            `
+        <h3>Login Verification</h3>
+        <p>Your OTP:</p>
+        <h2 style="color:#581c87; letter-spacing:5px;">${otp}</h2>
+        <p>Valid for 10 minutes.</p>
+      `,
         });
-        console.log('OTP sent: %s', info.messageId);
 
-        // For Development/Testing only - Log OTP to console
-        console.log('---------------------------------------------------');
-        console.log(`DEV MODE: Your Login OTP is: ${otp}`);
-        console.log('---------------------------------------------------');
-
+        console.log("OTP email sent:", info.messageId);
         return true;
     } catch (error) {
-        console.error('Error sending OTP:', error);
+        console.error("OTP email error:", error);
         return false;
     }
 };
 
-module.exports = { sendCertificateEmail, sendOtpEmail };
+
+// ---------------------------------------------------------------------------
+// MODULE EXPORTS
+// ---------------------------------------------------------------------------
+module.exports = {
+    sendCertificateEmail,
+    sendOtpEmail,
+};

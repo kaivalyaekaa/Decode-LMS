@@ -172,6 +172,8 @@ input[type="password"],
     transition: border-color 0.2s, box-shadow 0.2s;
     font-size: 1rem;
     font-family: inherit;
+    background-color: var(--neutral-white);
+    color: var(--neutral-black);
 }
 
 input:focus,
@@ -439,11 +441,16 @@ footer {
 .popup-box {
     background-color: var(--neutral-white);
     border-radius: var(--radius-xl);
-    padding: 2rem 2.5rem;
-    max-width: 400px;
+    padding: 2.5rem 3rem;
+    width: 100%;
+    max-width: 500px;
     text-align: center;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
-    animation: popIn 0.3s ease;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    /* Bouncy pop */
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .popup-box.success {
@@ -688,6 +695,49 @@ footer {
     background: rgba(255, 255, 255, 0.15);
 }
 
+/* Drawer Styles */
+.drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 50%;
+    min-width: 400px;
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+    padding: 2rem;
+}
+
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary-deep-purple);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--neutral-dark-grey);
+}
+
 /* Loading Spinner from theme.css */
 .spinner {
     border: 3px solid var(--primary-soft-lavender);
@@ -701,6 +751,68 @@ footer {
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 300px;
+    max-width: 400px;
+    animation: slideIn 0.3s ease-out;
+    border-left: 5px solid #ccc;
+}
+
+.toast-success {
+    border-left-color: #28a745;
+}
+
+.toast-error {
+    border-left-color: #dc3545;
+}
+
+.toast-info {
+    border-left-color: var(--primary-deep-purple);
+}
+
+.toast-warning {
+    border-left-color: #ffc107;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+    color: #999;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }
 
@@ -732,6 +844,13 @@ footer {
     border-color: var(--status-info);
     color: #1e40af;
     /* Using a dark blue for info text */
+}
+
+/* Status Badges */
+.status-rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
 }
 
 /* Filters */
@@ -785,4 +904,432 @@ footer {
 .btn-sm {
     padding: 0.4rem 0.8rem;
     font-size: 0.85rem;
+}
+
+/* --- NEW LAYOUT STYLES --- */
+
+/* --- Layout & Global UI Updates --- */
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    /* Slightly lighter background for cleanliness */
+}
+
+.main-header {
+    background-color: var(--neutral-white);
+    padding: 0.75rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--primary-deep-purple);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-logo {
+    height: 60px;
+    width: auto;
+}
+
+.header-title-box h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--primary-deep-purple);
+    margin: 0;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #666;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: #777;
+    text-transform: capitalize;
+}
+
+.logout-btn {
+    padding: 0.5rem 1.2rem;
+    background-color: transparent;
+    border: 1px solid var(--primary-deep-purple);
+    color: var(--primary-deep-purple);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: var(--primary-deep-purple);
+    color: white;
+}
+
+.main-content {
+    flex: 1;
+    /* Pushes footer down */
+    padding: 2rem;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.content-container {
+    width: 100%;
+}
+
+.main-footer {
+    background-color: var(--primary-deep-purple);
+    /* Changed to purple */
+    color: var(--neutral-white);
+    /* Changed to white */
+    padding: 1.5rem 2rem;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-links a {
+    color: var(--primary-soft-lavender);
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--neutral-white);
+    text-decoration: underline;
+}
+
+/* Nav Tabs Update - Purple Active State */
+.nav-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0;
+}
+
+.nav-tab {
+    padding: 0.8rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.nav-tab:hover {
+    color: var(--primary-deep-purple);
+    background-color: rgba(122, 42, 135, 0.05);
+    /* Light purple hover */
+}
+
+.nav-tab.active {
+    color: var(--neutral-white);
+    /* White text */
+    background-color: var(--primary-deep-purple);
+    /* Purple background */
+    border-bottom: 3px solid var(--primary-deep-purple);
+    border-radius: 6px 6px 0 0;
+    /* Rounded top corners */
+}
+
+/* Button Spacing */
+.action-buttons {
+    display: flex;
+    gap: 0.8rem;
+    /* Increased gap */
+    justify-content: flex-start;
+    /* Align left */
+}
+
+/* Refined Table Readability */
+th {
+    background-color: var(--primary-deep-purple);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    text-align: left;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+/* Login Page enhancements */
+.login-header-logo {
+    height: 80px;
+    margin-bottom: 1.5rem;
+}
+
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.login-main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f6f8;
+    padding: 2rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-logo {
+    height: 60px;
+    /* Adjusted size */
+    width: auto;
+}
+
+.header-title-box h1 {
+    font-size: 1.5rem;
+    /* More professional size */
+    margin: 0;
+    line-height: 1;
+    color: var(--primary-deep-purple);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.header-subtitle {
+    font-size: 0.9rem;
+    color: var(--neutral-dark-grey);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.user-name {
+    font-weight: 700;
+    color: var(--neutral-black);
+    font-size: 0.95rem;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: var(--neutral-dark-grey);
+    text-transform: uppercase;
+}
+
+.logout-btn {
+    background-color: transparent;
+    border: 1px solid var(--primary-deep-purple);
+    color: var(--primary-deep-purple) !important;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    border-radius: var(--radius-lg);
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background-color: var(--primary-deep-purple);
+    color: var(--neutral-white) !important;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1600px;
+    /* Wider professional constraint */
+    width: 100%;
+    margin: 0 auto;
+}
+
+.content-container {
+    width: 100%;
+}
+
+/* Footer Styles */
+.main-footer {
+    background-color: var(--neutral-white);
+    /* Cleaner look than dark footer */
+    border-top: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--neutral-dark-grey);
+}
+
+.footer-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.footer-links span {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.footer-links span:hover {
+    color: var(--primary-deep-purple);
+}
+
+/* --- REFINEMENT OVERRIDES (to fix "washed out" look) --- */
+
+/* Card Refinements */
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    /* Subtle border */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    /* Softer shadow */
+}
+
+/* Table Refinements */
+th {
+    font-size: 0.8rem;
+    /* Slightly smaller, more data-dense */
+    letter-spacing: 0.05em;
+    padding: 1rem 1.5rem;
+    /* Tighter padding */
+}
+
+td {
+    font-size: 0.9rem;
+    color: var(--neutral-black);
+    /* Ensure high contrast */
+    padding: 1rem 1.5rem;
+}
+
+/* Input/Form Refinements */
+label {
+    font-size: 0.9rem;
+    color: var(--neutral-black);
+    /* Darker label */
+}
+
+input,
+select {
+    background-color: #fff;
+    /* Ensure white background */
+}
+
+/* Dashboard Navigation Tabs Fix */
+.dashboard-nav {
+    border-radius: var(--radius-xl);
+    /* Rounded container */
+    margin-bottom: 2rem;
+    padding: 0.5rem 1rem;
+    /* Sleeker bar */
+}
+
+.nav-tabs {
+    border-bottom: none;
+    /* Remove underline */
+    gap: 0.5rem;
+}
+
+.nav-tab {
+    border-radius: var(--radius-md);
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.nav-tab:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+}
+
+.nav-tab.active {
+    background-color: var(--neutral-white);
+    color: var(--primary-deep-purple) !important;
+    /* Invert active state */
+    font-weight: 700;
+    opacity: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide old header elements if they exist inside components */
+.old-header,
+.admin-container .header-row {
+    display: none !important;
+}
+
+/* Button Refinement */
+.btn {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+    padding: 0.6rem 1.25rem;
 }

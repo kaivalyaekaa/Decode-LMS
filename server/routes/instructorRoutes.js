@@ -12,6 +12,7 @@ router.use(authorize('instructor'));
 
 // Student Management
 router.post('/register-student', instructorController.registerStudent);
+router.put('/move-student', instructorController.moveStudentBatch);
 router.get('/my-registrations', instructorController.getMyStudents);
 
 // Batch routes

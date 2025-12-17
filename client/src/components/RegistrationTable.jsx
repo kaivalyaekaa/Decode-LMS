@@ -4,18 +4,18 @@ import {
     deleteRegistration, assignToInstructor, exportRegistrations
 } from '../services/api';
 import { PROGRAM_LEVELS, PAYMENT_STATUSES } from '../constants'; // Import constants
+import PaginationControls from './PaginationControls';
 
-const RegistrationTable = ({ registrations, instructors, fetchData }) => {
-    // Filter states
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterLevel, setFilterLevel] = useState('');
-    const [filterMode, setFilterMode] = useState('');
-    const [filterPaymentStatus, setFilterPaymentStatus] = useState('');
-    const [filterReferrer, setFilterReferrer] = useState('');
-    const [filterCity, setFilterCity] = useState('');
-    const [filterDateFrom, setFilterDateFrom] = useState('');
-    const [filterDateTo, setFilterDateTo] = useState('');
-
+const RegistrationTable = ({
+    registrations,
+    instructors,
+    fetchData,
+    pagination,
+    onPageChange,
+    onLimitChange,
+    filters,
+    onFilterChange
+}) => {
     // Selection states for bulk actions
     const [selectedRegistrations, setSelectedRegistrations] = useState([]);
     const [assignInstructor, setAssignInstructor] = useState('');
@@ -36,24 +36,6 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
 
     const programLevelsOptions = PROGRAM_LEVELS;
 
-    const filteredRegistrations = registrations.filter(registration => {
-        const matchesSearch = registration.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            registration.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            registration.phone.includes(searchTerm);
-
-        const matchesLevel = !filterLevel || registration.programLevel.includes(filterLevel);
-        const matchesMode = !filterMode || registration.mode === filterMode;
-        const matchesPaymentStatus = !filterPaymentStatus || registration.paymentStatus === filterPaymentStatus;
-        const matchesReferrer = !filterReferrer || (registration.referrerName && registration.referrerName.toLowerCase().includes(filterReferrer.toLowerCase()));
-        const matchesCity = !filterCity || registration.cityCountry.toLowerCase().includes(filterCity.toLowerCase());
-
-        const registrationDate = new Date(registration.registrationDate);
-        const matchesDateFrom = !filterDateFrom || registrationDate >= new Date(filterDateFrom);
-        const matchesDateTo = !filterDateTo || registrationDate <= new Date(filterDateTo);
-
-        return matchesSearch && matchesLevel && matchesMode && matchesPaymentStatus && matchesReferrer && matchesCity && matchesDateFrom && matchesDateTo;
-    });
-
     const handleSelectRegistration = (id) => {
         setSelectedRegistrations(prev =>
             prev.includes(id) ? prev.filter(regId => regId !== id) : [...prev, id]
@@ -62,7 +44,7 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedRegistrations(filteredRegistrations.map(reg => reg._id));
+            setSelectedRegistrations(registrations.map(reg => reg._id));
         } else {
             setSelectedRegistrations([]);
         }
@@ -86,11 +68,8 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
 
     const handleExport = async () => {
         try {
-            const params = {
-                level: filterLevel, paymentStatus: filterPaymentStatus, referrer: filterReferrer,
-                city: filterCity, mode: filterMode, dateFrom: filterDateFrom, dateTo: filterDateTo
-            };
-            const response = await exportRegistrations(params);
+            // Use current filters for export
+            const response = await exportRegistrations(filters);
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -162,31 +141,35 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
         }
     };
 
+    const handleFilterChange = (key, value) => {
+        onFilterChange({ ...filters, [key]: value });
+    };
+
     return (
         <>
             <div className="card" style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-                        <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
+                        <select value={filters.level || ''} onChange={(e) => handleFilterChange('level', e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
                             <option value="">All Levels</option>
                             {programLevelsOptions.map(level => <option key={level} value={level}>{level}</option>)}
                         </select>
-                        <select value={filterMode} onChange={(e) => setFilterMode(e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
+                        <select value={filters.mode || ''} onChange={(e) => handleFilterChange('mode', e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
                             <option value="">All Modes</option>
                             <option value="Online Training">Online Training</option>
                             <option value="Offline">Offline</option>
                         </select>
-                        <select value={filterPaymentStatus} onChange={(e) => setFilterPaymentStatus(e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
+                        <select value={filters.paymentStatus || ''} onChange={(e) => handleFilterChange('paymentStatus', e.target.value)} className="form-select" style={{ flex: 1, minWidth: '150px' }}>
                             <option value="">All Payment Status</option>
                             {Object.values(PAYMENT_STATUSES).map(status => <option key={status} value={status}>{status}</option>)}
                         </select>
-                        <input type="text" placeholder="City" value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="form-input" style={{ flex: 1, minWidth: '150px' }} />
-                        <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="form-input" style={{ flex: 1, minWidth: '130px' }} />
-                        <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="form-input" style={{ flex: 1, minWidth: '130px' }} />
+                        <input type="text" placeholder="City" value={filters.city || ''} onChange={(e) => handleFilterChange('city', e.target.value)} className="form-input" style={{ flex: 1, minWidth: '150px' }} />
+                        <input type="date" value={filters.dateFrom || ''} onChange={(e) => handleFilterChange('dateFrom', e.target.value)} className="form-input" style={{ flex: 1, minWidth: '130px' }} />
+                        <input type="date" value={filters.dateTo || ''} onChange={(e) => handleFilterChange('dateTo', e.target.value)} className="form-input" style={{ flex: 1, minWidth: '130px' }} />
                         <button onClick={handleExport} className="btn" style={{ whiteSpace: 'nowrap' }}>Export Excel</button>
                     </div>
                     <div>
-                        <input type="text" placeholder="Search by Name, Email, Phone..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="form-input" style={{ width: '100%' }} />
+                        <input type="text" placeholder="Search by Name, Email, Phone..." value={filters.search || ''} onChange={(e) => handleFilterChange('search', e.target.value)} className="form-input" style={{ width: '100%' }} />
                     </div>
                 </div>
             </div>
@@ -206,7 +189,7 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
                 <table>
                     <thead>
                         <tr>
-                            <th><input type="checkbox" onChange={handleSelectAll} checked={selectedRegistrations.length === filteredRegistrations.length && filteredRegistrations.length > 0} /></th>
+                            <th><input type="checkbox" onChange={handleSelectAll} checked={selectedRegistrations.length === registrations.length && registrations.length > 0} /></th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Level</th>
@@ -220,35 +203,49 @@ const RegistrationTable = ({ registrations, instructors, fetchData }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredRegistrations.map(reg => {
-                            const levelParts = reg.programLevel ? reg.programLevel.split(' – ') : ['N/A', 'N/A'];
-                            const level = levelParts[0] || 'N/A';
-                            const program = levelParts[1] || 'N/A';
+                        {registrations.length === 0 ? (
+                            <tr><td colSpan="11" className="text-center">No registrations found.</td></tr>
+                        ) : (
+                            registrations.map(reg => {
+                                const levelParts = reg.programLevel ? reg.programLevel.split(' – ') : ['N/A', 'N/A'];
+                                const level = levelParts[0] || 'N/A';
+                                const program = levelParts[1] || 'N/A';
 
-                            return (
-                                <tr key={reg._id}>
-                                    <td><input type="checkbox" checked={selectedRegistrations.includes(reg._id)} onChange={() => handleSelectRegistration(reg._id)} /></td>
-                                    <td>{reg.fullName}</td>
-                                    <td>{reg.email}</td>
-                                    <td>{level}</td>
-                                    <td>{program}</td>
-                                    <td>{reg.cityCountry}</td>
-                                    <td>{reg.manualDate ? new Date(reg.manualDate).toLocaleDateString() : 'N/A'}</td>
-                                    <td>{reg.batchId?.batchCode || 'N/A'}</td>
-                                    <td>{reg.referrerName || 'N/A'}</td>
-                                    <td><span className={`status-badge status-${reg.paymentStatus.toLowerCase().replace(' ', '-')}`}>{reg.paymentStatus}</span></td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button onClick={() => openAssignModal(reg)} className="btn btn-sm">Assign</button>
-                                            <button onClick={() => openEditModal(reg)} className="btn btn-sm">Edit</button>
-                                            <button onClick={() => openDeleteModal(reg)} className="btn btn-sm btn-danger">Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                return (
+                                    <tr key={reg._id}>
+                                        <td><input type="checkbox" checked={selectedRegistrations.includes(reg._id)} onChange={() => handleSelectRegistration(reg._id)} /></td>
+                                        <td>{reg.fullName}</td>
+                                        <td>{reg.email}</td>
+                                        <td>{level}</td>
+                                        <td>{program}</td>
+                                        <td>{reg.cityCountry}</td>
+                                        <td>{reg.manualDate ? new Date(reg.manualDate).toLocaleDateString() : 'N/A'}</td>
+                                        <td>{reg.batchId?.batchCode || 'N/A'}</td>
+                                        <td>{reg.assignedInstructorId?.fullName || reg.referrerName || 'N/A'}</td>
+                                        <td><span className={`status-badge status-${reg.paymentStatus.toLowerCase().replace(' ', '-')}`}>{reg.paymentStatus}</span></td>
+                                        <td>
+                                            <div className="action-buttons">
+                                                <button onClick={() => openAssignModal(reg)} className="btn btn-sm">Assign</button>
+                                                <button onClick={() => openEditModal(reg)} className="btn btn-sm">Edit</button>
+                                                <button onClick={() => openDeleteModal(reg)} className="btn btn-sm btn-danger">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
+                {pagination && (
+                    <PaginationControls
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={onPageChange}
+                        limit={pagination.limit}
+                        onLimitChange={onLimitChange}
+                        totalRecords={pagination.total}
+                    />
+                )}
             </div>
 
             {/* Modals for Edit, Delete, Assign */}

@@ -246,29 +246,90 @@ const registerStudent = async (req, res) => {
 const getMyStudents = async (req, res) => {
     try {
         const instructorId = req.user.userId;
-        // Fetch students registered by this instructor OR assigned to this instructor
-        const registrations = await Registration.find({
+        const { page = 1, limit = 10, search } = req.query;
+
+        const query = {
             $or: [
                 { registeredBy: instructorId },
                 { assignedInstructorId: instructorId }
             ]
-        }).sort({ registrationDate: -1 });
-        res.json({ success: true, registrations });
+        };
+
+        if (search) {
+            query.fullName = { $regex: search, $options: 'i' };
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [registrations, total] = await Promise.all([
+            Registration.find(query)
+                .sort({ registrationDate: -1 })
+                .skip(skip)
+                .limit(Number(limit)),
+            Registration.countDocuments(query)
+        ]);
+
+        res.json({
+            success: true,
+            registrations,
+            pagination: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
         console.error("Error fetching my registrations:", error);
         res.status(500).json({ success: false, message: "Error fetching registrations" });
     }
 };
 
+const User = require('../models/User');
 // Create a new batch
 const createBatch = async (req, res) => {
     try {
-        const { batchCode, programLevel, startDate, mode, studentIds } = req.body;
+        const { programLevel, startDate, mode, studentIds } = req.body;
         const instructorId = req.user.userId;
 
-        if (!batchCode || !programLevel || !startDate) {
-            return res.status(400).json({ success: false, message: 'Batch Code, Program Level, and Start Date are required.' });
+        if (!programLevel || !startDate) {
+            return res.status(400).json({ success: false, message: 'Program Level and Start Date are required.' });
         }
+
+        // Fetch Instructor for Initials
+        const instructor = await User.findById(instructorId);
+        if (!instructor) {
+            return res.status(404).json({ success: false, message: 'Instructor not found.' });
+        }
+
+        // Generate Batch Code: DECODE-L<LEVEL>-<TRAINER_CODE>-<ddmmyy>
+        // 1. Level
+        const levelMatch = programLevel.match(/\d+/);
+        const level = levelMatch ? levelMatch[0] : '1';
+
+        // 2. Trainer Code
+        const nameParts = instructor.fullName.trim().split(/\s+/);
+        const firstInitial = nameParts[0] ? nameParts[0][0].toUpperCase() : 'X';
+        const secondInitial = nameParts.length > 1 ? nameParts[1][0].toUpperCase() : (nameParts[0].length > 1 ? nameParts[0][1].toUpperCase() : 'X');
+        const trainerCode = `${firstInitial}${secondInitial}`;
+
+        // 3. Date (startDate) -> ddmmyy
+        const dateObj = new Date(startDate);
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const yy = String(dateObj.getFullYear()).slice(-2);
+        const dateStr = `${dd}${mm}${yy}`;
+
+        const batchPrefix = `DECODE-L${level}-${trainerCode}-${dateStr}`;
+
+        // 4. Sequence Count (Check existing batches with this prefix)
+        // Regex to match prefix followed by - and 3 digits
+        const countExisting = await Batch.countDocuments({
+            batchCode: { $regex: `^${batchPrefix}-\\d{3}$` }
+        });
+        const sequence = String(countExisting + 1).padStart(3, '0');
+
+        const batchCode = `${batchPrefix}-${sequence}`;
 
         const newBatch = new Batch({
             batchCode,
@@ -352,6 +413,46 @@ const getMyBatches = async (req, res) => {
     }
 };
 
+// Move a student to a different batch
+const moveStudentBatch = async (req, res) => {
+    try {
+        const { registrationId, targetBatchId } = req.body;
+        const instructorId = req.user.userId;
+
+        if (!registrationId || !targetBatchId) {
+            return res.status(400).json({ success: false, message: 'Registration ID and Target Batch ID are required.' });
+        }
+
+        const registration = await Registration.findById(registrationId);
+        if (!registration) {
+            return res.status(404).json({ success: false, message: 'Student registration not found.' });
+        }
+
+        const targetBatch = await Batch.findById(targetBatchId);
+        if (!targetBatch) {
+            return res.status(404).json({ success: false, message: 'Target batch not found.' });
+        }
+
+        // Verify ownership (optional: check if instructor owns the batch)
+        if (targetBatch.instructorId.toString() !== instructorId) {
+            return res.status(403).json({ success: false, message: 'You can only move students to batches you manage.' });
+        }
+
+        // Update Registration
+        registration.batchId = targetBatchId;
+        // Also update assignedInstructor if we want to enforce it, but here it's same instructor
+        registration.assignedInstructorId = instructorId;
+
+        await registration.save();
+
+        res.json({ success: true, message: 'Student moved to new batch successfully.', registration });
+
+    } catch (error) {
+        console.error('Error moving student:', error);
+        res.status(500).json({ success: false, message: 'Error moving student.' });
+    }
+};
+
 module.exports = {
     getBatchStudentsWithAttendance,
     getStudentAttendance,
@@ -362,5 +463,6 @@ module.exports = {
     addStudentNote,
     getStudentNotes,
     getMyBatches,
-    createBatch
+    createBatch,
+    moveStudentBatch
 };

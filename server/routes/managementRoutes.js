@@ -16,12 +16,18 @@ router.get('/registrations/eligible', managementController.getEligibleRegistrati
 
 // Certificate routes
 router.get('/certificates', managementController.getIssuedCertificates);
-router.post('/certificate/approve', managementController.approveCertificate);
-router.post('/certificate/resend-email', managementController.resendCertificateEmail);
+router.post('/approve-certificate', managementController.approveCertificate);
+router.post('/reject-certificate', managementController.rejectCertificate); // New rejection route
+router.post('/resend-certificate', managementController.resendCertificate);
 router.post('/certificate/revoke', managementController.revokeCertificate);
 
 // Statistics
 router.get('/statistics', managementController.getDashboardStatistics);
+
+// Batch Management
+router.get('/batches', managementController.getAllBatches);
+router.get('/batches/:batchId/students', managementController.getStudentsByBatch);
+router.get('/batches/:batchId/certificates-zip', managementController.downloadBatchCertificates);
 
 // Template Management
 router.post('/templates', managementController.createTemplate);

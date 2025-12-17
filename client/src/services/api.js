@@ -26,10 +26,11 @@ export const studentLogin = (data) => api.post('/student-login', data);
 // Instructor
 export const getInstructorBatches = () => api.get('/instructors/my-batches');
 export const createBatch = (data) => api.post('/instructors/batch', data);
+export const moveStudentBatch = (data) => api.put('/instructors/move-student', data);
 export const getBatchStudents = (batchId) => api.get(`/instructors/batch-students`, { params: { batchId } });
 export const markAttendance = (data) => api.post('/instructors/attendance/mark', data);
 export const bulkMarkAttendance = (data) => api.post('/instructors/attendance/bulk', data);
-export const getMyStudents = () => api.get('/instructors/my-registrations');
+export const getMyStudents = (params) => api.get('/instructors/my-registrations', { params });
 export const registerStudentByInstructor = (data) => api.post('/instructors/register-student', data);
 
 // Finance
@@ -48,7 +49,7 @@ export const getTemplates = () => api.get('/management/templates');
 export const setActiveTemplate = (data) => api.post('/management/templates/set-active', data);
 
 // Registration Admin
-export const getRegAdminRegistrations = () => api.get('/registration-admin/registrations');
+export const getRegAdminRegistrations = (params) => api.get('/registration-admin/registrations', { params });
 export const getRegAdminInstructors = () => api.get('/registration-admin/instructors');
 export const updateRegistration = (registrationId, data) => api.put(`/registration-admin/registration/${registrationId}`, data);
 export const deleteRegistration = (registrationId) => api.delete(`/registration-admin/registration/${registrationId}`);
@@ -58,6 +59,13 @@ export const getRegAdminStats = () => api.get('/registration-admin/statistics');
 export const uploadExcel = (formData) => api.post('/registration-admin/upload-excel', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
 });
+
+// Batch Management
+export const getAllBatches = () => api.get('/management/batches');
+export const getStudentsByBatch = (batchId) => api.get(`/management/batches/${batchId}/students`);
+export const downloadBatchCertificates = (batchId) =>
+    api.get(`/management/batches/${batchId}/certificates-zip`, { responseType: 'blob' });
+export const rejectCertificate = (data) => api.post('/management/reject-certificate', data);
 
 // User Management (Registration Admin)
 export const getAllUsers = () => api.get('/registration-admin/users');

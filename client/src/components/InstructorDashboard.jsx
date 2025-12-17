@@ -7,9 +7,14 @@ import {
     registerStudentByInstructor,
     markAttendance,
     bulkMarkAttendance,
-    createBatch
+    createBatch,
+    moveStudentBatch
 } from '../services/api';
-import { PROGRAM_LEVELS, PAYMENT_STATUSES } from '../constants'; // Import constants
+import { PROGRAM_LEVELS, PAYMENT_STATUSES, REGIONS } from '../constants'; // Import constants
+
+import Layout from './Layout';
+import SmartStudentPicker from './SmartStudentPicker';
+import PaginationControls from './PaginationControls';
 
 const InstructorDashboard = () => {
     const [batches, setBatches] = useState([]);
@@ -21,6 +26,11 @@ const InstructorDashboard = () => {
     const [user, setUser] = useState(null);
     const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
 
+    // My Students Pagination
+    const [myStudentsPagination, setMyStudentsPagination] = useState({
+        page: 1, limit: 10, total: 0, totalPages: 1
+    });
+
     // Registration Form State
     const [regForm, setRegForm] = useState({
         fullName: '',
@@ -30,7 +40,9 @@ const InstructorDashboard = () => {
         programLevel: '',
         referralSource: '',
         referrerName: '',
-        mode: 'Online Training'
+        mode: 'Online Training',
+        region: 'INDIA', // Default
+        manualDate: ''
     });
     const [regMessage, setRegMessage] = useState(null);
 
@@ -44,6 +56,11 @@ const InstructorDashboard = () => {
     });
     const [batchMessage, setBatchMessage] = useState(null);
 
+    // Move Student State
+    const [showMoveModal, setShowMoveModal] = useState(false);
+    const [studentToMove, setStudentToMove] = useState(null);
+    const [targetBatchId, setTargetBatchId] = useState('');
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -52,8 +69,11 @@ const InstructorDashboard = () => {
             setUser(JSON.parse(storedUser));
         }
         fetchBatches();
-        fetchMyStudents();
     }, []);
+
+    useEffect(() => {
+        fetchMyStudents();
+    }, [myStudentsPagination.page, myStudentsPagination.limit]);
 
     useEffect(() => {
         if (selectedBatchId) {
@@ -62,6 +82,47 @@ const InstructorDashboard = () => {
             setStudents([]);
         }
     }, [selectedBatchId]);
+
+    // Auto-generate Batch ID Effect
+    useEffect(() => {
+        if (batchForm.programLevel && batchForm.startDate && batchForm.mode) {
+            generateBatchCode();
+        }
+    }, [batchForm.programLevel, batchForm.startDate, batchForm.mode]);
+
+    const generateBatchCode = () => {
+        // Format: DECODE-L<LEVEL>-<TRAINER_CODE>-<ddmmyy>
+        // Example: DECODE-L2-UP-150826
+
+        if (!user || !user.fullName) return;
+
+        const levelMap = {
+            'Level 1 – Decode Your Mind': '1',
+            'Level 2 – Decode Your Behavior': '2',
+            'Level 3 – Decode Your Relationship': '3',
+            'Level 4 – Decode Your Blueprint': '4'
+        };
+        const levelNum = levelMap[batchForm.programLevel] || '1';
+
+        // TRAINER_CODE: First letter of First Name + First letter of Middle/Last Name
+        const nameParts = user.fullName.trim().split(/\s+/);
+        const firstInitial = nameParts[0] ? nameParts[0][0].toUpperCase() : 'X';
+        const secondInitial = nameParts.length > 1 ? nameParts[1][0].toUpperCase() : (nameParts[0].length > 1 ? nameParts[0][1].toUpperCase() : 'X');
+        const trainerCode = `${firstInitial}${secondInitial}`;
+
+        const dateObj = new Date(batchForm.startDate);
+        if (isNaN(dateObj.getTime())) return;
+
+        // Date in ddmmyy
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const yy = String(dateObj.getFullYear()).slice(-2);
+        const dateStr = `${dd}${mm}${yy}`;
+
+        // Default count is 001 for display. Backend will handle increment if duplicate exists.
+        const code = `DECODE-L${levelNum}-${trainerCode}-${dateStr}-001`;
+        setBatchForm(prev => ({ ...prev, batchCode: code }));
+    };
 
     const fetchBatches = async () => {
         try {
@@ -91,18 +152,19 @@ const InstructorDashboard = () => {
 
     const fetchMyStudents = async () => {
         try {
-            const registeredByMeRes = await getMyStudents();
+            const registeredByMeRes = await getMyStudents({
+                page: myStudentsPagination.page,
+                limit: myStudentsPagination.limit
+            });
             setRegisteredByMeRegistrations(registeredByMeRes.data.registrations);
+            setMyStudentsPagination(prev => ({
+                ...prev,
+                ...registeredByMeRes.data.pagination
+            }));
         } catch (error) {
             console.error('Error fetching instructor data:', error);
         }
     }
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
-    };
 
     const handleMarkAttendance = async (registrationId, status) => {
         try {
@@ -154,7 +216,9 @@ const InstructorDashboard = () => {
                 programLevel: '',
                 referralSource: '',
                 referrerName: '',
-                mode: 'Online'
+                mode: 'Online Training',
+                region: 'INDIA',
+                manualDate: ''
             });
             fetchMyStudents();
         } catch (error) {
@@ -196,29 +260,47 @@ const InstructorDashboard = () => {
         });
     };
 
-    if (loading && !batches.length) return <div className="spinner-container"><div className="spinner"></div></div>;
+    const openMoveModal = (student) => {
+        setStudentToMove(student);
+        setTargetBatchId('');
+        setShowMoveModal(true);
+    };
+
+    const handleMoveStudent = async () => {
+        if (!targetBatchId || !studentToMove) return;
+
+        try {
+            await moveStudentBatch({
+                registrationId: studentToMove._id,
+                targetBatchId
+            });
+            alert('Student moved successfully!');
+            setShowMoveModal(false);
+            setStudentToMove(null);
+            fetchMyStudents(); // Refresh list to update batch link if we displayed it
+            if (selectedBatchId) fetchStudents(selectedBatchId); // Refresh attendance view if needed
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error moving student');
+        }
+    };
+
+    if (loading && !batches.length && !registeredByMeRegistrations.length) return <div className="spinner-container"><div className="spinner"></div></div>;
 
     return (
-        <div className="admin-container">
-            <header className="dashboard-nav">
-                <div className="dashboard-header">
-                    <h1>Instructor Dashboard</h1>
-                    <p>Welcome, {user?.fullName}</p>
-                    <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
-                </div>
-            </header>
-
+        <Layout title="Instructor Dashboard">
             <div className="dashboard-content">
-                <div className="nav-tabs">
-                    {['attendance', 'my_students', 'register', 'create_batch'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`nav-tab ${activeTab === tab ? 'active' : ''}`}
-                        >
-                            {tab.replace('_', ' ')}
-                        </button>
-                    ))}
+                <div className="dashboard-nav">
+                    <div className="nav-tabs">
+                        {['attendance', 'my_students', 'register', 'create_batch'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`nav-tab ${activeTab === tab ? 'active' : ''}`}
+                            >
+                                {tab.replace('_', ' ')}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {activeTab === 'attendance' && (
@@ -297,7 +379,7 @@ const InstructorDashboard = () => {
                                         <th>Location</th>
                                         <th>Mode</th>
                                         <th>Registered On</th>
-                                        <th>Payment Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -313,9 +395,7 @@ const InstructorDashboard = () => {
                                                 <td><span className={`status-badge status-${registration.mode.toLowerCase()}`}>{registration.mode}</span></td>
                                                 <td>{new Date(registration.registrationDate).toLocaleDateString()}</td>
                                                 <td>
-                                                    <span className={`status-badge status-${registration.paymentStatus.toLowerCase().replace(' ', '-')}`}>
-                                                        {registration.paymentStatus}
-                                                    </span>
+                                                    <button onClick={() => openMoveModal(registration)} className="btn primary-btn btn-sm">Move Batch</button>
                                                 </td>
                                             </tr>
                                         ))
@@ -323,6 +403,14 @@ const InstructorDashboard = () => {
                                 </tbody>
                             </table>
                         </div>
+                        <PaginationControls
+                            currentPage={myStudentsPagination.page}
+                            totalPages={myStudentsPagination.totalPages}
+                            onPageChange={(page) => setMyStudentsPagination(prev => ({ ...prev, page }))}
+                            limit={myStudentsPagination.limit}
+                            onLimitChange={(limit) => setMyStudentsPagination(prev => ({ ...prev, limit, page: 1 }))}
+                            totalRecords={myStudentsPagination.total}
+                        />
                     </div>
                 )}
 
@@ -349,7 +437,7 @@ const InstructorDashboard = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>Email Address (To receive certificate)</label>
+                                <label>Email Address</label>
                                 <input
                                     type="email"
                                     name="email"
@@ -388,6 +476,18 @@ const InstructorDashboard = () => {
                             </div>
 
                             <div className="form-group">
+                                <label>Region</label>
+                                <select
+                                    name="region"
+                                    value={regForm.region}
+                                    onChange={e => setRegForm({ ...regForm, region: e.target.value })}
+                                    className="form-select"
+                                >
+                                    {Object.values(REGIONS).map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
                                 <label>Select Program Level *</label>
                                 <select
                                     name="programLevel"
@@ -416,13 +516,24 @@ const InstructorDashboard = () => {
                             </div>
 
                             <div className="form-group">
-                                <label>From whom did you hear about us? (Name of referrer/trainer)</label>
+                                <label>Trainer Name (Referrer)</label>
                                 <input
                                     type="text"
                                     name="referrerName"
                                     value={regForm.referrerName}
                                     onChange={e => setRegForm({ ...regForm, referrerName: e.target.value })}
                                     placeholder="Enter name"
+                                    className="form-input"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Manual Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    name="manualDate"
+                                    value={regForm.manualDate}
+                                    onChange={e => setRegForm({ ...regForm, manualDate: e.target.value })}
                                     className="form-input"
                                 />
                             </div>
@@ -455,14 +566,13 @@ const InstructorDashboard = () => {
                         )}
                         <form onSubmit={handleBatchSubmit}>
                             <div className="form-group">
-                                <label>Batch Code *</label>
+                                <label>Batch Code (Auto-generated)</label>
                                 <input
                                     type="text"
                                     value={batchForm.batchCode}
-                                    onChange={e => setBatchForm({ ...batchForm, batchCode: e.target.value })}
-                                    required
-                                    placeholder="e.g. L1-JAN-2024"
+                                    readOnly
                                     className="form-input"
+                                    style={{ backgroundColor: '#f0f0f0' }}
                                 />
                             </div>
 
@@ -507,34 +617,46 @@ const InstructorDashboard = () => {
 
                             <div className="form-group">
                                 <label>Select Students to Add (Optional)</label>
-                                <div className="student-selection-list" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', borderRadius: '4px' }}>
-                                    {registeredByMeRegistrations.length === 0 ? (
-                                        <p className="text-muted">No students available to add.</p>
-                                    ) : (
-                                        registeredByMeRegistrations.map(student => (
-                                            <div key={student._id} className="checkbox-item" style={{ marginBottom: '5px' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    id={`student-${student._id}`}
-                                                    checked={batchForm.studentIds.includes(student._id)}
-                                                    onChange={() => handleStudentSelection(student._id)}
-                                                    style={{ marginRight: '10px' }}
-                                                />
-                                                <label htmlFor={`student-${student._id}`}>
-                                                    {student.fullName} ({student.email})
-                                                </label>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
+                                <SmartStudentPicker
+                                    onSelectionChange={handleStudentSelection}
+                                    selectedStudentIds={batchForm.studentIds}
+                                />
                             </div>
 
-                            <button type="submit" className="btn primary-btn">Create Batch</button>
+                            <button type="submit" className="btn primary-btn" style={{ marginTop: '1rem' }}>Create Batch</button>
                         </form>
                     </div>
                 )}
+
+                {/* Move Student Modal */}
+                {showMoveModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <h3>Move Student: {studentToMove?.fullName}</h3>
+                            <div className="form-group">
+                                <label>Select New Batch</label>
+                                <select
+                                    value={targetBatchId}
+                                    onChange={(e) => setTargetBatchId(e.target.value)}
+                                    className="form-select"
+                                >
+                                    <option value="">Select Target Batch</option>
+                                    {batches.map(batch => (
+                                        <option key={batch._id} value={batch._id}>
+                                            {batch.batchCode} ({new Date(batch.startDate).toLocaleDateString()})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="modal-actions" style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setShowMoveModal(false)} className="btn">Cancel</button>
+                                <button onClick={handleMoveStudent} className="btn primary-btn" disabled={!targetBatchId}>Move</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+        </Layout>
     );
 };
 

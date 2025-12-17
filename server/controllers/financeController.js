@@ -19,7 +19,7 @@ const getAllRegistrationsPaymentStatus = async (req, res) => {
         }
 
         const registrations = await Registration.find(filter)
-            .select('fullName email phone paymentStatus paymentMode transactionId programLevel region')
+            .select('fullName email phone paymentStatus paymentMode transactionId paymentDate programLevel region cityCountry')
             .sort({ registrationDate: -1 });
 
         res.json({ success: true, registrations });
@@ -43,6 +43,12 @@ const updateRegistrationPayment = async (req, res) => {
         registration.paymentStatus = paymentStatus;
         registration.paymentMode = paymentMode || null;
         registration.transactionId = transactionId || null;
+
+        // If status changed to Paid and no date exists, set it
+        if (paymentStatus === 'Paid' && !registration.paymentDate) {
+            registration.paymentDate = new Date();
+        }
+
         await registration.save();
 
         if (paymentStatus === 'Paid') {

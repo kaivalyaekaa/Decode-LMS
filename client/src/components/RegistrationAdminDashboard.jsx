@@ -8,6 +8,8 @@ import {
 } from '../services/api';
 import { PROGRAM_LEVELS, ROLES, PAYMENT_STATUSES } from '../constants'; // Import constants
 
+import Layout from './Layout';
+
 const RegistrationAdminDashboard = () => {
     const [registrations, setRegistrations] = useState([]);
     const [instructors, setInstructors] = useState([]);
@@ -15,10 +17,28 @@ const RegistrationAdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [users, setUsers] = useState([]);
-    
+
     // UI States
     const [activeTab, setActiveTab] = useState('registrations');
     const [showUploadModal, setShowUploadModal] = useState(false);
+
+    // Pagination & Filter States
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1
+    });
+
+    const [filters, setFilters] = useState({
+        search: '',
+        level: '',
+        mode: '',
+        paymentStatus: '',
+        city: '',
+        dateFrom: '',
+        dateTo: ''
+    });
 
     // Upload States
     const [uploadFile, setUploadFile] = useState(null);
@@ -32,29 +52,60 @@ const RegistrationAdminDashboard = () => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) setUser(JSON.parse(storedUser));
         fetchData();
+    }, [pagination.page, pagination.limit, filters]);
+
+    // Initial load independent of filters
+    useEffect(() => {
+        fetchInitialData();
     }, []);
+
+
+    const fetchInitialData = async () => {
+        try {
+            const [instRes, statsRes, usersRes] = await Promise.all([
+                getRegAdminInstructors(), getRegAdminStats(), getAllUsers()
+            ]);
+            setInstructors(instRes.data.instructors);
+            setStats(statsRes.data.statistics);
+            setUsers(usersRes.data.users);
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [regsRes, instRes, statsRes, usersRes] = await Promise.all([
-                getRegAdminRegistrations(), getRegAdminInstructors(), getRegAdminStats(), getAllUsers()
-            ]);
+            const regsRes = await getRegAdminRegistrations({
+                page: pagination.page,
+                limit: pagination.limit,
+                ...filters
+            });
+
             setRegistrations(regsRes.data.registrations);
-            setInstructors(instRes.data.instructors);
-            setStats(statsRes.data.statistics);
-            setUsers(usersRes.data.users);
+            setPagination(prev => ({
+                ...prev,
+                ...regsRes.data.pagination
+            }));
+
         } catch (error) {
             alert('Error loading data: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
     };
-    
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+
+    const handlePageChange = (newPage) => {
+        setPagination(prev => ({ ...prev, page: newPage }));
+    };
+
+    const handleLimitChange = (newLimit) => {
+        setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+    };
+
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
+        setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
     };
 
     const handleUploadClick = () => fileInputRef.current.click();
@@ -82,57 +133,49 @@ const RegistrationAdminDashboard = () => {
             setUploading(false);
         }
     };
-    
+
     if (loading) {
         return <div className="spinner-container"><div className="spinner"></div></div>;
     }
 
     return (
-        <div className="admin-container">
-            <header className="dashboard-nav">
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1600px', margin: '0 auto' }}>
-                    <div>
-                        <h1 style={{ color: 'white', margin: 0 }}>Registration Admin</h1>
-                        <p style={{ color: 'var(--primary-soft-lavender)', margin: 0 }}>Welcome, {user?.fullName}</p>
-                    </div>
-                    <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
-                </div>
-            </header>
-            
-            <main style={{ maxWidth: '1600px', margin: '2rem auto', padding: '0 2rem' }}>
-                 <div className="card-grid">
+        <Layout title="Registration Admin">
+            <div style={{ maxWidth: '1600px', margin: '2rem auto', padding: '0 2rem' }}>
+                <div className="card-grid">
                     <div className="card text-center">
                         <h3>Total Registrations</h3>
                         <p className="big-number">{stats?.totalRegistrations || 0}</p>
                     </div>
-                     <div className="card text-center">
+                    <div className="card text-center">
                         <h3>Assigned</h3>
                         <p className="big-number">{stats?.assignedRegistrations || 0}</p>
                     </div>
-                     <div className="card text-center">
+                    <div className="card text-center">
                         <h3>Unassigned</h3>
                         <p className="big-number">{stats?.unassignedRegistrations || 0}</p>
                     </div>
-                     <div className="card text-center">
+                    <div className="card text-center">
                         <h3>Online</h3>
                         <p className="big-number">{stats?.onlineRegistrations || 0}</p>
                     </div>
-                     <div className="card text-center">
+                    <div className="card text-center">
                         <h3>Offline</h3>
                         <p className="big-number">{stats?.offlineRegistrations || 0}</p>
                     </div>
-                     <div className="card text-center">
+                    <div className="card text-center">
                         <h3>Paid</h3>
                         <p className="big-number">{stats?.paidRegistrations || 0}</p>
                     </div>
                 </div>
 
-                <div className="nav-tabs">
-                    <button onClick={() => setActiveTab('registrations')} className={`nav-tab ${activeTab === 'registrations' ? 'active' : ''}`}>Registrations</button>
-                    <button onClick={() => setActiveTab('users')} className={`nav-tab ${activeTab === 'users' ? 'active' : ''}`}>User Management</button>
+                <div className="dashboard-nav">
+                    <div className="nav-tabs">
+                        <button onClick={() => setActiveTab('registrations')} className={`nav-tab ${activeTab === 'registrations' ? 'active' : ''}`}>Registrations</button>
+                        <button onClick={() => setActiveTab('users')} className={`nav-tab ${activeTab === 'users' ? 'active' : ''}`}>User Management</button>
+                    </div>
                 </div>
 
-                <div style={{marginTop: '2rem'}}>
+                <div style={{ marginTop: '2rem' }}>
                     {activeTab === 'registrations' ? (
                         <>
                             <div className="table-header">
@@ -140,17 +183,26 @@ const RegistrationAdminDashboard = () => {
                                 <button className="btn" onClick={handleUploadClick}>Upload Excel</button>
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept=".xlsx, .xls" />
                             </div>
-                            <RegistrationTable registrations={registrations} instructors={instructors} fetchData={fetchData} />
+                            <RegistrationTable
+                                registrations={registrations}
+                                instructors={instructors}
+                                fetchData={fetchData}
+                                pagination={pagination}
+                                onPageChange={handlePageChange}
+                                onLimitChange={handleLimitChange}
+                                filters={filters}
+                                onFilterChange={handleFilterChange}
+                            />
                         </>
                     ) : (
                         <UserManagementTable users={users} fetchData={fetchData} />
                     )}
                 </div>
-            </main>
-            
+            </div>
+
             {showUploadModal && (
-                 <div className="popup-overlay">
-                    <div className="popup-box" style={{width: '500px'}}>
+                <div className="popup-overlay">
+                    <div className="popup-box" style={{ width: '500px' }}>
                         <h2>Upload Excel File</h2>
                         {uploadResult ? (
                             <div>
@@ -158,10 +210,10 @@ const RegistrationAdminDashboard = () => {
                                 <p className="alert alert-success">Successful: {uploadResult.successCount}</p>
                                 <p className="alert alert-error">Failed: {uploadResult.failedCount}</p>
                                 {uploadResult.errors?.length > 0 && (
-                                    <div style={{marginTop: '1rem'}}>
+                                    <div style={{ marginTop: '1rem' }}>
                                         <h5>Errors:</h5>
-                                        <ul style={{textAlign: 'left', maxHeight: '150px', overflowY: 'auto', padding: '0.5rem', background: '#f3f4f6'}}>
-                                            {uploadResult.errors.map((err, i) => <li key={i} style={{fontSize: '0.8rem'}}>{err}</li>)}
+                                        <ul style={{ textAlign: 'left', maxHeight: '150px', overflowY: 'auto', padding: '0.5rem', background: '#f3f4f6' }}>
+                                            {uploadResult.errors.map((err, i) => <li key={i} style={{ fontSize: '0.8rem' }}>{err}</li>)}
                                         </ul>
                                     </div>
                                 )}
@@ -179,7 +231,7 @@ const RegistrationAdminDashboard = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </Layout>
     );
 };
 

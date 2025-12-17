@@ -29,19 +29,17 @@ const LoginPage = () => {
         try {
             const response = await login(formData);
 
-            // Case 1: MFA Required (New Flow)
             if (response.data.mfaRequired) {
                 setStep('otp');
                 setUserId(response.data.userId);
                 setMaskedEmail(response.data.emailMasked);
 
                 if (response.data.devOtp) {
-                    alert(`DEV MODE OTP: ${response.data.devOtp}`); // Show OTP on screen
+                    alert(`DEV MODE OTP: ${response.data.devOtp}`);
                 } else {
                     alert(`OTP sent to ${response.data.emailMasked}`);
                 }
             }
-            // Case 2: Legacy/Direct Login (Fallback if server not restarted or MFA disabled)
             else if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -85,77 +83,95 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '1rem' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <img src="/images/R.png" alt="EKAA Logo" style={{ height: '60px', marginBottom: '1rem' }} />
-                    <h1>{step === 'login' ? 'Admin Login' : 'Verify OTP'}</h1>
-                    <p>{step === 'login' ? 'Sign in to manage the portal' : `Enter the code sent to ${maskedEmail}`}</p>
+        <div className="login-wrapper">
+            {/* Public Header */}
+            <header className="main-header">
+                <div className="header-left">
+                    <img src="/images/logo.png" alt="EKAA Logo" className="header-logo" />
+                    <div className="header-title-box">
+                        <h1>EKAA Training Institute of Hypnotherapy</h1>
+                    </div>
                 </div>
+            </header>
 
-                {error && <div className="alert alert-error">{error}</div>}
+            <main className="login-main">
+                <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                        <h1 style={{ color: 'var(--primary-deep-purple)', marginBottom: '0.5rem' }}>{step === 'login' ? 'Admin Login' : 'Verify OTP'}</h1>
+                        <p style={{ color: '#666' }}>{step === 'login' ? 'Sign in to manage the portal' : `Enter the code sent to ${maskedEmail}`}</p>
+                    </div>
 
-                {step === 'login' ? (
-                    <form onSubmit={handleLoginSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="role">Login As</label>
-                            <select id="role" name="role" value={formData.role} onChange={handleChange} required className="form-select">
-                                <option value="registration_admin">Registration Admin</option>
-                                <option value="instructor">Instructor</option>
-                                <option value="finance">Finance Team</option>
-                                <option value="management">Management</option>
-                            </select>
-                        </div>
+                    {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
 
-                        <div className="form-group">
-                            <label htmlFor="username">Username</label>
-                            <input id="username" type="text" name="username" value={formData.username} onChange={handleChange} required placeholder="Enter your username" className="form-input" />
-                        </div>
+                    {step === 'login' ? (
+                        <form onSubmit={handleLoginSubmit}>
+                            <div className="form-group">
+                                <label htmlFor="role">Login As</label>
+                                <select id="role" name="role" value={formData.role} onChange={handleChange} required className="form-select">
+                                    <option value="registration_admin">Registration Admin</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="finance">Finance Team</option>
+                                    <option value="management">Management</option>
+                                </select>
+                            </div>
 
-                        <div className="form-group">
-                            <label htmlFor="password">Password</label>
-                            <input id="password" type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Enter your password" className="form-input" />
-                        </div>
+                            <div className="form-group">
+                                <label htmlFor="username">Username</label>
+                                <input id="username" type="text" name="username" value={formData.username} onChange={handleChange} required placeholder="Enter your username" className="form-input" />
+                            </div>
 
-                        <button type="submit" disabled={loading} className="btn" style={{ width: '100%' }}>
-                            {loading ? 'Verifying Credentials...' : 'Sign In'}
-                        </button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleOtpSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="otp">One-Time Password</label>
-                            <input
-                                id="otp"
-                                type="text"
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value)}
-                                required
-                                maxLength="6"
-                                placeholder="123456"
-                                className="form-input"
-                                style={{ letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.5rem' }}
-                            />
-                        </div>
+                            <div className="form-group">
+                                <label htmlFor="password">Password</label>
+                                <input id="password" type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Enter your password" className="form-input" />
+                            </div>
 
-                        <button type="submit" disabled={loading} className="btn" style={{ width: '100%' }}>
-                            {loading ? 'Verifying OTP...' : 'Verify Login'}
-                        </button>
-
-                        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                            <button type="button" onClick={() => setStep('login')} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}>
-                                Back to Login
+                            <button type="submit" disabled={loading} className="btn primary-btn" style={{ width: '100%', marginTop: '1rem', padding: '1rem' }}>
+                                {loading ? 'Verifying Credentials...' : 'Sign In'}
                             </button>
-                        </div>
-                    </form>
-                )}
+                        </form>
+                    ) : (
+                        <form onSubmit={handleOtpSubmit}>
+                            <div className="form-group">
+                                <label htmlFor="otp">One-Time Password</label>
+                                <input
+                                    id="otp"
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    required
+                                    maxLength="6"
+                                    placeholder="123456"
+                                    className="form-input"
+                                    style={{ letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.5rem' }}
+                                />
+                            </div>
 
-                <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
-                    <a href="/" style={{ color: 'var(--primary-deep-purple)', textDecoration: 'none', fontWeight: '600' }}>
-                        ← Back to Registration
-                    </a>
+                            <button type="submit" disabled={loading} className="btn primary-btn" style={{ width: '100%', marginTop: '1rem', padding: '1rem' }}>
+                                {loading ? 'Verifying OTP...' : 'Verify Login'}
+                            </button>
+
+                            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                                <button type="button" onClick={() => setStep('login')} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}>
+                                    Back to Login
+                                </button>
+                            </div>
+                        </form>
+                    )}
+
+                    <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
+                        <a href="/" style={{ color: 'var(--primary-deep-purple)', textDecoration: 'none', fontWeight: '600' }}>
+                            ← Back to Registration
+                        </a>
+                    </div>
                 </div>
-            </div>
+            </main>
+
+            {/* Public Footer */}
+            <footer className="main-footer">
+                <div className="footer-content">
+                    <p>&copy; {new Date().getFullYear()} EKAA Foundation. All rights reserved.</p>
+                </div>
+            </footer>
         </div>
     );
 };

@@ -6,12 +6,59 @@ const bcrypt = require('bcryptjs');
 
 const getAllRegistrations = async (req, res) => {
     try {
-        const registrations = await Registration.find({})
-            .populate('assignedInstructorId', 'fullName email')
-            .populate('batchId', 'batchCode')
-            .sort({ registrationDate: -1 });
-        res.json({ success: true, registrations });
+        const { page = 1, limit = 10, search, level, mode, paymentStatus, referrer, city, dateFrom, dateTo } = req.query;
+
+        const query = {};
+
+        // Search (Name, Email, Phone)
+        if (search) {
+            // Note: Email/Phone are encrypted, so we can't reliably regex search them unless we search by hash or decrypt everything (slow).
+            // For now, let's search by fullName (unencrypted) and potentially exact match on email if hashed. 
+            // Or if we want partial search on encrypted fields, we'd need a different strategy.
+            // Requirement says: "Search by Name, Email, Phone".
+            // Since email/phone are encrypted, we'll stick to Name for partial, and maybe strict match for others if we hash them.
+            // BUT, the current implementation decrypts after find. 
+            // Let's rely on regex for fullName. For Email/Phone, if they are encrypted, regex won't work on the DB side.
+            // We will search by fullName only for now to keep it efficient, OR we accept that we can't regex search encrypted fields easily without a lookup.
+            query.fullName = { $regex: search, $options: 'i' };
+        }
+
+        if (level) query.programLevel = { $regex: level, $options: 'i' };
+        if (mode) query.mode = mode;
+        if (paymentStatus) query.paymentStatus = paymentStatus;
+        if (referrer) query.referrerName = { $regex: referrer, $options: 'i' };
+        if (city) query.cityCountry = { $regex: city, $options: 'i' };
+
+        if (dateFrom || dateTo) {
+            query.registrationDate = {};
+            if (dateFrom) query.registrationDate.$gte = new Date(dateFrom);
+            if (dateTo) query.registrationDate.$lte = new Date(dateTo);
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [registrations, total] = await Promise.all([
+            Registration.find(query)
+                .populate('assignedInstructorId', 'fullName email')
+                .populate('batchId', 'batchCode')
+                .sort({ registrationDate: -1 }) // FIFO / Latest First
+                .skip(skip)
+                .limit(Number(limit)),
+            Registration.countDocuments(query)
+        ]);
+
+        res.json({
+            success: true,
+            registrations,
+            pagination: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
+        console.error('Error fetching registrations:', error);
         res.status(500).json({ success: false, message: 'Error fetching registrations' });
     }
 };
@@ -276,7 +323,7 @@ const exportRegistrations = async (req, res) => {
                 level: levelParts[0] || 'N/A',
                 program: levelParts[1] || 'N/A',
                 manualDate: reg.manualDate ? new Date(reg.manualDate).toLocaleDateString() : 'N/A',
-                trainerName: reg.referrerName || 'N/A',
+                trainerName: reg.assignedInstructorId?.fullName || reg.referrerName || 'N/A',
                 batch: reg.batchId ? reg.batchId.batchCode : 'N/A'
             });
         });

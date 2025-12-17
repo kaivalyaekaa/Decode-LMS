@@ -8,6 +8,8 @@
         "dev": "nodemon server.js"
     },
     "dependencies": {
+        "@aws-sdk/client-ses": "^3.952.0",
+        "archiver": "^7.0.1",
         "axios": "^1.13.2",
         "bcryptjs": "^3.0.3",
         "cors": "^2.8.5",

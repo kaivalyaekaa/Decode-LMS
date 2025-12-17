@@ -65,6 +65,9 @@ const registrationSchema = new mongoose.Schema({
     transactionId: {
         type: String
     },
+    paymentDate: {
+        type: Date
+    },
     certificateStatus: {
         type: String,
         enum: ['Pending', 'Issued', 'Revoked'],
